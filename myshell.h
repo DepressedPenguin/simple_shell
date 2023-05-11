@@ -11,4 +11,9 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#define MAXC_LENZ 1024
+#define MAX_ARGZ 64
+#define MAXA_LENZ 128
+char **read_stdins(char *input);
+void enforce_cmd(char** args);
 #endif

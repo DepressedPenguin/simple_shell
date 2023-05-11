@@ -11,4 +11,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
+char **read_stdins(char *input);
+void enforce_cmd(char** args);
+
 #endif

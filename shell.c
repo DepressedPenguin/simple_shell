@@ -17,7 +17,7 @@ int main() {
     char **arjs;
 
     while (1) {
-        printf("$ ");
+        printf("$abas ");
         getline(&btn, &stdinz_size, stdin);
 
         btn[strlen(btn)-1] = 0;

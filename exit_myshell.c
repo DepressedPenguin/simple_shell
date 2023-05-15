@@ -1,8 +1,16 @@
-#include "myshell.c"
+#include "myshell.h"
 
-void exit_myshell() {
-    printf("Exiting shell...\n");
-    exit(0);
+void exit_myshell(char** args) {
+    if (strcmp(args[0], "exit") == 0) {
+    if (args[1] != NULL) {
+        int exit_status = atoi(args[1]);
+        exit(exit_status);
+    } else {
+        exit(0);
+    }
+}
+
+
 }
 
 void printing_env() {

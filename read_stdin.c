@@ -1,4 +1,15 @@
-#include "myshell.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#define MAXC_LEN 1024
+#define MAX_ARZ 64
+#define MAXA_LEN 128
+
+char **exe_name_cmd;
 
 char **read_stdin(char *input) {
     char **argz = malloc(sizeof(char*) * MAX_ARZ);

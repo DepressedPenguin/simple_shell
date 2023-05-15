@@ -1,3 +1,5 @@
+#include "myshell.c"
+
 void exit_myshell() {
     printf("Exiting shell...\n");
     exit(0);

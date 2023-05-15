@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "myshell.h"
 
 #define BUFFER_SIZE 1024
 

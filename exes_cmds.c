@@ -1,3 +1,5 @@
+#include "myshell.h"
+
 void exes_cmds(char** args) {
     pid_t pds = fork();
     if (pds == 0) {

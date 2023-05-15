@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
+#include "myshell.h"
 
 
 void enforce_cmd(char** arjs) {

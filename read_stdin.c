@@ -1,3 +1,5 @@
+#include "myshell.h"
+
 char **read_stdin(char *input) {
     char **argz = malloc(sizeof(char*) * MAX_ARZ);
     char *toksign;

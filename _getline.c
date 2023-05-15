@@ -1,10 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "myshell.h"
-
-#define BUFFER_SIZE 1024
-
-char* _mygitl() {
+char* _mygitl(void) {
     static char buffer[BUFFER_SIZE];
     static size_t buffer_index = 0;
     static size_t buffer_size = 0;
@@ -57,12 +52,11 @@ char* _mygitl() {
 
 
 int main() {
+	char* input = _mygitl();
     printf("Enter a line of text: ");
-    char* input = getline();
+    input = _mygitl;
     
-    printf("Input: %s\n", input);
-    
-
+    printf("Input: %s\n", input)
     free(input);
     
     return 0;

@@ -9,7 +9,7 @@ int main(__attribute__((unused))int argc, char* argv[]) {
 
     while (1) {
         printf("$ ");
-        getline(&stdput, &stdput_leng, stdin);
+_mygitl(&stdput, &stdput_leng, stdin);
         stdput[strcspn(stdput, "\n")] = 0;
 
         args = read_stdin(stdput);

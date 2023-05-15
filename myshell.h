@@ -13,5 +13,6 @@
 
 char **read_stdins(char *input);
 void enforce_cmd(char** args);
-
+extern char **exe_name;
 #endif
+

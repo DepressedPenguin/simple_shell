@@ -10,8 +10,6 @@
 #define MAX_ARZ 64
 #define MAXA_LEN 128
 
-char **exe_name_cmd;
-
 char **read_stdin(char *input) {
     char **argz = malloc(sizeof(char*) * MAX_ARZ);
     char *toksign;

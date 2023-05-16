@@ -13,7 +13,7 @@ void exit_myshell(char** args) {
 
 }
 
-void printing_env() {
+void printing_env(void) {
     extern char **environ;
     char **env = environ;
     while (*env) {

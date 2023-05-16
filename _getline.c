@@ -30,7 +30,7 @@ char* _mygitl(void) {
                 line = realloc(line, line_length + 1);
                 line[line_length] = '\0';
                 buffer_index++; 
-                return line;
+                return (line);
             }
             
 
@@ -44,19 +44,9 @@ char* _mygitl(void) {
 
     if (end_of_file) {
         free(line);
-        return NULL;
+        return (NULL);
     }
     
-    return line; 
+    return (line); 
 }
 
-
-int main() {
-	char* input = _mygitl();
-    printf("Enter a line of text: ");
-    input = _mygitl;
-    
-    printf("Input: %s\n", input)
-    free(input);
-    
-    return 0;

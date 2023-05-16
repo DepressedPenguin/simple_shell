@@ -16,7 +16,7 @@
 #include <stddef.h>
 #define BUFFER_SIZE 1024
 char **exe_name_cmd;
-char **read_stdins(char* input);
+char **read_stdin(char* input);
 void enforce_cmd(char** args);
 
 char* _mygitl(void);

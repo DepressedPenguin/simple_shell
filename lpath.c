@@ -1,3 +1,5 @@
+#include "myshell.h"
+
 char* find_wayy(char* commands) {
     char *wayy = getenv("PATH");
     char *dr;

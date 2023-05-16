@@ -1,22 +1,21 @@
 #include "myshell.h"
 
 int main(__attribute__((unused))int argc, char* argv[]) {
-    char *stdput = NULL;
-    size_t stdput_leng = 0;
+    char _stdput[BUFFER_SIZE];
     char **args;
 
     exe_name_cmd = argv;
 
     while (1) {
         printf("$ ");
-_mygitl(&stdput, &stdput_leng, stdin);
-        stdput[strcspn(stdput, "\n")] = 0;
+	strcpy(_stdput , _mygitl());
+        _stdput[strcspn(_stdput, "\n")] = 0;
 
-        args = read_stdin(stdput);
+        args = read_stdin(_stdput);
 
         if (args[0] != NULL) {
             if (strcmp(args[0], "exit") == 0) {
-                exit_myshell();
+                exit_myshell(args);
             } else if (strcmp(args[0], "env") == 0) {
                 printing_env();
             } else {
@@ -25,6 +24,6 @@ _mygitl(&stdput, &stdput_leng, stdin);
         }
     }
 
-    free(stdput);
+    free(_stdput);
     return 0;
 }

@@ -10,20 +10,20 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <stddef.h>
 #define MAXC_LEN 1024
 #define MAX_ARZ 64
 #define MAXA_LEN 128
-#include <stddef.h>
 #define BUFFER_SIZE 1024
 char **exe_name_cmd;
-char **read_stdin(char* input);
-void enforce_cmd(char** args);
-
-char* _mygitl(void);
-void enforce_cmd(char** arjs);
+char *current_directory;
+char **read_stdin(char *input);
+char* find_wayy(char* commands);
 void exes_cmds(char** args);
 void exit_myshell(char** args);
+void change_directory(char **args);
 void printing_env(void);
-char* find_wayy(char* commands);
+ssize_t _getly(char **lineptr, size_t *n, FILE *stream);
+
 #endif
 

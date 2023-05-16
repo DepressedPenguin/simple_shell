@@ -1,12 +1,12 @@
 #include "myshell.h"
-
 void exes_cmds(char** args) {
+    char *cmd_path;
     pid_t pds = fork();
     if (pds == 0) {
         if (args[0][0] == '/') {
             execve(args[0], args, NULL);
         } else {
-            char *cmd_path = find_wayy(args[0]);
+           cmd_path = find_wayy(args[0]);
 
             if (cmd_path == 0) {
                 printf("%s: No such file or directory\n",  exe_name_cmd[0]);
@@ -23,3 +23,4 @@ void exes_cmds(char** args) {
         exit(1);
     }
 }
+

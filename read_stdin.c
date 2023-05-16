@@ -1,15 +1,4 @@
 #include "myshell.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/wait.h>
-
-#define MAXC_LEN 1024
-#define MAX_ARZ 64
-#define MAXA_LEN 128
-
 char **read_stdin(char *input) {
     char **argz = malloc(sizeof(char*) * MAX_ARZ);
     char *toksign;
@@ -39,4 +28,29 @@ char **read_stdin(char *input) {
     argz[v] = NULL;
 
     return argz;
+}
+
+char* find_wayy(char* commands) {
+    char *wayy = getenv("PATH");
+    char *dr;
+    char *fulls_canal = malloc(sizeof(char) * (MAXC_LEN + 1));
+
+    if (fulls_canal == 0) {
+        return (NULL);
+    }
+
+    dr = strtok(wayy, ":");
+    while (dr != 0) {
+        snprintf(fulls_canal, MAXC_LEN, "%s/%s", dr, commands);
+
+        if (access(fulls_canal, X_OK) == 0) {
+            return fulls_canal;
+        }
+
+        dr = strtok(NULL, ":");
+    }
+
+    free(fulls_canal);
+
+    return (NULL);
 }

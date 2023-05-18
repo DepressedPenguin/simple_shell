@@ -1,7 +1,5 @@
 #include "myshell.h"
 #include <stdlib.h>
-
-
 /**
  * exit_myshell- function that exits the program
  * @args: arguments
@@ -62,10 +60,10 @@ free(previous_directory);
  */
 void printing_env(void)
 {
-    char **env = environ;
-    while (*env)
-    {
-        printf("%s\n", *env);
-        env++;
-    }
+char **env = environ;
+while (*env)
+{
+printf("%s\n", *env);
+env++;
+}
 }

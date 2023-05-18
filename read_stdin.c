@@ -1,10 +1,10 @@
 #include "myshell.h"
 
-/*
+/**
  * read_stdin - Tokenizes the input string and stores tokens.
- * @input: The input string to tokenize
+ * @input: The input string to tokenize.
  *
- * Return: An array of strings containing the tokens, or NULL on failure
+ * Return: An array of strings containing the tokens, or NULL on failure.
  */
 char **read_stdin(char *input)
 {
@@ -12,14 +12,14 @@ char **argz = malloc(sizeof(char *) * MAX_ARZ);
 char *toksign;
 int v = 0;
 
-if (argz == 0)
-	{
+if (argz == NULL)
+{
 return (NULL);
 }
 
 toksign = strtok(input, " ");
 
-for (v = 0; toksign != 0; v++)
+for (v = 0; toksign != NULL; v++)
 {
 if (v >= MAX_ARZ - 1)
 {
@@ -27,7 +27,7 @@ return (NULL);
 }
 
 argz[v] = malloc(sizeof(char) * MAXA_LEN);
-if (argz[v] == 0)
+if (argz[v] == NULL)
 {
 return (NULL);
 }
@@ -42,11 +42,11 @@ argz[v] = NULL;
 return (argz);
 }
 
-/*
+/**
  * find_wayy - Searches for the specified command.
- * @commands: The command to search for
+ * @commands: The command to search for.
  *
- * Return: The full path of the command if found, NULL otherwise
+ * Return: The full path of the command if found, NULL otherwise.
  */
 char *find_wayy(char *commands)
 {
@@ -54,13 +54,13 @@ char *wayy = getenv("PATH");
 char *dr;
 char *fulls_canal = malloc(sizeof(char) * (MAXC_LEN + 1));
 
-if (fulls_canal == 0)
+if (fulls_canal == NULL)
 {
 return (NULL);
 }
 
 dr = strtok(wayy, ":");
-while (dr != 0)
+while (dr != NULL)
 {
 snprintf(fulls_canal, MAXC_LEN, "%s/%s", dr, commands);
 

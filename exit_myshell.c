@@ -1,5 +1,4 @@
 #include "myshell.h"
-#include <stdlib.h>
 /**
  * exit_myshell- function that exits the program
  * @args: arguments
@@ -53,13 +52,12 @@ printf("cd: %s: No such file or directory\n", new_directory);
 if (previous_directory != NULL)
 free(previous_directory);
 }
-#include <stdlib.h>
-
-/**
+/*
  * printing_env - Print all environment variables.
  */
 void printing_env(void)
 {
+extern char **environ;
 char **env = environ;
 while (*env)
 {

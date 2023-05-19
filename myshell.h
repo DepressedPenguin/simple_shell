@@ -15,6 +15,7 @@
 #define MAX_ARZ 64
 #define MAXA_LEN 128
 #define BUFFER_SIZE 1024
+extern char **environ;
 char **exe_name_cmd;
 char *current_directory;
 char **read_stdin(char *input);

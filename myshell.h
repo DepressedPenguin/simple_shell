@@ -17,6 +17,7 @@
 #define BUFFER_SIZE 1024
 extern char **environ;
 char **exe_name_cmd;
+extern char **environ;
 char *current_directory;
 char **read_stdin(char *input);
 char* find_wayy(char* commands);

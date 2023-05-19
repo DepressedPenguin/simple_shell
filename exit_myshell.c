@@ -57,7 +57,6 @@ free(previous_directory);
  */
 void printing_env(void)
 {
-extern char **environ;
 char **env = environ;
 while (*env)
 {

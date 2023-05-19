@@ -52,7 +52,7 @@ printf("cd: %s: No such file or directory\n", new_directory);
 if (previous_directory != NULL)
 free(previous_directory);
 }
-/*
+/**
  * printing_env - Print all environment variables.
  */
 void printing_env(void)

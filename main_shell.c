@@ -1,8 +1,4 @@
 #include "myshell.h"
-<<<<<<< HEAD
-
-int main(__attribute__((unused))int argc, char* argv[]) {
-=======
 /**
  * main - Entry point for the program
  * @argc: Number of command-line arguments
@@ -12,7 +8,6 @@ int main(__attribute__((unused))int argc, char* argv[]) {
 
 int main(__attribute__((unused))int argc, char *argv[])
 {
->>>>>>> a30f6eddd3c817673d55d82174861e218cf41695
 char *stdput = NULL;
 size_t stdput_leng = 0;
 char **args;

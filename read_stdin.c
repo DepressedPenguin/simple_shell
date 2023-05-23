@@ -4,7 +4,7 @@
  * read_stdin - Tokenizes the input string and stores tokens.
  * @input: The input string to tokenize.
  *
- * Return: An array of strings containing the tokens, or NULL on failure.
+ * Return: a collection of strings containing the tokens, or NULL
  */
 char **read_stdin(char *input)
 {

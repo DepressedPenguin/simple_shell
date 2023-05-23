@@ -19,8 +19,8 @@
 #define BUFFER_SIZE 1024
 
 extern char **environ;
-extern char *current_directory;
-extern char **exe_name_cmd;
+char *current_directory;
+char **exe_name_cmd;
 /**
  * read_stdin - Reads input from standard into an array of strings.
  * @input: The input string to be.

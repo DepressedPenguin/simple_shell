@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
@@ -62,7 +63,9 @@ void tokenizeCommand(char* command, char*** args, int* argCount) {
             argIndex++;
         }
     }
+
     (*args)[argIndex] = NULL;
+
     *argCount = argIndex;
 }
 
@@ -74,100 +77,57 @@ void freeArguments(char** args) {
     free(args);
 }
 
-void executeCommand(char** args, const char* executableName, int commandNumber) {
+void executeCommand(char** args, const char* executableName) {
+    char* fullPath;
     pid_t pid;
-    char* path , *pathEnv, *commandPath , * token ;
     int status;
 
-    if (strchr(args[0], '/') != NULL) {
-        pid = fork();
-        if (pid < 0) {
-            perror("Fork failed");
-            exit(EXIT_FAILURE);
-        } else if (pid == 0) {
-            if (execve(args[0], args, environ) == -1) {
-                fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            do {
-                pid_t wpid = waitpid(pid, &status, WUNTRACED);
-                if (wpid == -1) {
-                    perror("Waitpid failed");
-                    exit(EXIT_FAILURE);
+    fullPath = args[0];
+    if (strchr(args[0], '/') == NULL) {
+        char* path = getenv("PATH");
+        if (path != NULL) {
+            char* token = strtok(path, ":");
+            while (token != NULL) {
+                char* temp = malloc(strlen(token) + strlen(args[0]) + 2);
+                strcpy(temp, token);
+                strcat(temp, "/");
+                strcat(temp, args[0]);
+
+                if (access(temp, X_OK) == 0) {
+                    fullPath = temp;
+                    break;
                 }
-            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+                free(temp);
+                token = strtok(NULL, ":");
+            }
+        }
+    }
+
+    pid = fork();
+    if (pid < 0) {
+        perror(executableName);
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        if (execve(fullPath, args, environ) == -1) {
+            perror(executableName);
+            exit(EXIT_FAILURE);
         }
     } else {
-         pathEnv = getenv("PATH");
-        if (pathEnv == NULL) {
-            fprintf(stderr, "Failed to get the PATH environment variable\n");
-            return;
-        }
-
-        path = strdup(pathEnv);
-        if (path == NULL) {
-            perror("Memory allocation failed");
-            exit(EXIT_FAILURE);
-        }
-
-        token = strtok(path, ":");
-        while (token != NULL) {
-             commandPath = (char*)malloc((strlen(token) + strlen(args[0]) + 2) * sizeof(char));
-            if (commandPath == NULL) {
-                perror("Memory allocation failed");
+        do {
+            pid_t wpid = waitpid(pid, &status, WUNTRACED);
+            if (wpid == -1) {
+                perror(executableName);
                 exit(EXIT_FAILURE);
             }
-
-            sprintf(commandPath, "%s/%s", token, args[0]);
-
-            pid = fork();
-            if (pid < 0) {
-                perror("Fork failed");
-                exit(EXIT_FAILURE);
-            } else if (pid == 0) {
-                if (execve(commandPath, args, environ) == -1) {
-                    exit(EXIT_FAILURE);
-                }
-            } else {
-                do {
-                    pid_t wpid = waitpid(pid, &status, WUNTRACED);
-                    if (wpid == -1) {
-                        perror("Waitpid failed");
-                        exit(EXIT_FAILURE);
-                    }
-                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-            }
-
-            free(commandPath);
-
-            token = strtok(NULL, ":");
-        }
-
-        fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
-        free(path);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
-}
-
-int changeDirectory(char** args, int argCount) {
-    if (argCount != 2) {
-        fprintf(stderr, "cd: invalid number of arguments\n");
-        return 1;
-    }
-
-    if (chdir(args[1]) != 0) {
-        perror("cd failed");
-        return 1;
-    }
-
-    return 0;
 }
 
 int main(int argc, char *argv[]) {
     char* command = NULL;
     char** args = NULL;
     int argCount = 0;
-    int commandNumber = 0;
     size_t bufferSize = MAX_COMMAND_LENGTH;
     ssize_t lineSize;
     FILE *inputStream = stdin;
@@ -177,7 +137,7 @@ int main(int argc, char *argv[]) {
         inputStream = fopen(argv[1], "r");
         interactiveMode = 0;
         if (inputStream == NULL) {
-            perror("Failed to open the script file");
+            perror(argv[0]);
             exit(EXIT_FAILURE);
         }
     }
@@ -190,7 +150,7 @@ int main(int argc, char *argv[]) {
 
         command = (char*)malloc(bufferSize * sizeof(char));
         if (command == NULL) {
-            perror("Memory allocation failed");
+            perror(argv[0]);
             exit(EXIT_FAILURE);
         }
 
@@ -206,23 +166,15 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        commandNumber++;
-
         args = (char**) malloc((MAX_ARGS + 1) * sizeof(char*));
         if (args == NULL) {
-            perror("Memory allocation failed");
+            perror(argv[0]);
             exit(EXIT_FAILURE);
         }
 
         tokenizeCommand(command, &args, &argCount);
         if (argCount > 0) {
-            if (strcmp(args[0], "cd") == 0) {
-                if (changeDirectory(args, argCount) != 0) {
-                    fprintf(stderr, "Failed to change directory\n");
-                }
-            } else {
-                executeCommand(args, argv[0], commandNumber);
-            }
+            executeCommand(args, argv[0]);
         }
 
         freeArguments(args);

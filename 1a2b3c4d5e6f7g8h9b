@@ -1,0 +1,8 @@
+total 44
+-rw-r--r-- 1 root root   142 May 16 04:03 AUTHORS
+-rwxrwxrwx 1 root root  4762 May 24 11:14 check.sh
+-rwxr-xr-x 1 root root 18096 May 24 14:41 hsh
+-rw-r--r-- 1 root root  3847 May 24 14:44 main.c
+-rwxr-xr-x 1 root root    53 May 10 08:49 pusher
+-rw-r--r-- 1 root root    13 May 24 02:27 README.md
+drwxr-xr-x 2 root root    47 May 24 13:52 test

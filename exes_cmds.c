@@ -14,7 +14,7 @@ if (pds == 0)
 {
 if (args[0][0] == '/')
 {
-execve(args[0], args, NULL);
+execve(args[0], args, environ);
 }
 else
 {
@@ -26,7 +26,7 @@ printf("%s: No such file or directory\n", exe_name_cmd[0]);
 exit(1);
 }
 
-execve(cmd_path, args, NULL);
+execve(cmd_path, args, environ);
 }
 
 printf("%s: failed to execute\n", args[0]);

@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         if (isatty(0)) {
-            printf("$ ");
+            printf("Shell > ");
             fflush(stdout);
         }
 

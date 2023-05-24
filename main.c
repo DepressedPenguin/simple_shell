@@ -7,12 +7,17 @@
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
+extern char **environ;
 
 void tokenizeCommand(char* command, char*** args, int* argCount) {
     char* token;
     int argIndex = 0;
-
+    
     token = strtok(command, " \t\n");
+    if (token == NULL) {
+        *argCount = 0;
+        return;
+    }
     while (token != NULL && argIndex < MAX_ARGS - 1) {
         (*args)[argIndex] = strdup(token);
         argIndex++;
@@ -33,41 +38,24 @@ void freeArguments(char** args) {
 void executeCommand(char** args, const char* executableName, int commandNumber) {
     pid_t pid;
     int status;
-    char* commandPath;
-    char* token;
-        char* pathTokenized;
-	char* path;
 
-    if (args[0][0] == '/') {
-        commandPath = strdup(args[0]);
-    } else {
-        path = getenv("PATH");
-        if (path == NULL) {
-            fprintf(stderr, "Error: PATH environment variable not found\n");
-            return;
+    // Check if the command exists in the PATH
+    char* path = getenv("PATH");
+    char* pathEntry;
+    char commandPath[MAX_COMMAND_LENGTH];
+    int commandFound = 0;
+
+    while ((pathEntry = strsep(&path, ":")) != NULL) {
+        snprintf(commandPath, sizeof(commandPath), "%s/%s", pathEntry, args[0]);
+        if (access(commandPath, X_OK) == 0) {
+            commandFound = 1;
+            break;
         }
+    }
 
-        pathTokenized = strdup(path);
-        token = strtok(pathTokenized, ":");
-        while (token != NULL) {
-            commandPath = (char*)malloc(strlen(token) + strlen(args[0]) + 2);
-            strcpy(commandPath, token);
-            strcat(commandPath, "/");
-            strcat(commandPath, args[0]);
-
-            if (access(commandPath, F_OK) == 0) {
-                break;
-            }
-
-            free(commandPath);
-            token = strtok(NULL, ":");
-        }
-
-        free(pathTokenized);
-        if (commandPath == NULL) {
-            fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
-            return;
-        }
+    if (!commandFound) {
+        fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
+        return;
     }
 
     pid = fork();
@@ -75,8 +63,8 @@ void executeCommand(char** args, const char* executableName, int commandNumber) 
         perror("Fork failed");
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
-        if (execvp(commandPath, args) < 0) {
-            fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
+        if (execve(commandPath, args, environ) == -1) {
+            perror("Execve failed");
             exit(EXIT_FAILURE);
         }
     } else {
@@ -88,16 +76,29 @@ void executeCommand(char** args, const char* executableName, int commandNumber) 
             }
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
+}
 
-    free(commandPath);
+int changeDirectory(char** args, int argCount) {
+    if (argCount != 2) {
+        fprintf(stderr, "cd: invalid number of arguments\n");
+        return 1;
+    }
+
+    if (chdir(args[1]) != 0) {
+        perror("cd failed");
+        return 1;
+    }
+
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
-    char command[MAX_COMMAND_LENGTH];
+    char* command = NULL;
     char** args = NULL;
     int argCount = 0;
     int commandNumber = 0;
-
+    ssize_t lineSize;
+    size_t bufferSize = 0;
     FILE *inputStream = stdin;
     int interactiveMode = 1;
 
@@ -116,12 +117,13 @@ int main(int argc, char *argv[]) {
             fflush(stdout);
         }
 
-        if (fgets(command, sizeof(command), inputStream) == NULL) {
+        bufferSize = 0;
+        lineSize = getline(&command, &bufferSize, inputStream);
+        if (lineSize == -1) {
             printf("\n");
             break;
         }
-
-        command[strcspn(command, "\n")] = '\0';
+        command[lineSize - 1] = '\0';
 
         if (strcmp(command, "exit") == 0) {
             break;
@@ -136,13 +138,24 @@ int main(int argc, char *argv[]) {
         }
 
         tokenizeCommand(command, &args, &argCount);
-        executeCommand(args, argv[0], commandNumber);
+        if (argCount > 0) {
+            if (strcmp(args[0], "cd") == 0) {
+                if (changeDirectory(args, argCount) != 0) {
+                    fprintf(stderr, "Failed to change directory\n");
+                }
+            } else {
+                executeCommand(args, argv[0], commandNumber);
+            }
+        }
+
         freeArguments(args);
     }
 
     if (!interactiveMode) {
         fclose(inputStream);
     }
+
+    free(command);
 
     return 0;
 }

@@ -14,11 +14,11 @@ ssize_t num_chars = 0;
 ssize_t bufsize = 0;
 int c;
 
-	/* check for invalid parameters */
+        /* check for invalid parameters */
 if (lineptr == NULL || n == NULL || stream == NULL)
 return (-1);
 
-	/* allocate buffer if not already allocated */
+        /* allocate buffer if not already allocated */
 if (*lineptr == NULL || *n == 0)
 {
 *lineptr = malloc(128);
@@ -27,14 +27,14 @@ return (-1);
 *n = 128;
 }
 
-	/* read characters until end of line or end of file */
+        /* read characters until end of line or end of file */
 while ((c = fgetc(stream)) != '\n' && c != EOF)
 {
-		/* store character in buffer */
+                /* store character in buffer */
 (*lineptr)[num_chars] = c;
 num_chars++;
 
-		/* resize buffer if necessary */
+                /* resize buffer if necessary */
 if ((size_t)num_chars >= *n)
 {
 bufsize = *n + 128;
@@ -45,9 +45,8 @@ return (-1);
 }
 }
 
-	/* terminate string with null character */
+        /* terminate string with null character */
 (*lineptr)[num_chars] = '\0';
 
 return (num_chars);
 }
-

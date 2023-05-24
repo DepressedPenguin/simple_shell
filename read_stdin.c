@@ -76,4 +76,3 @@ free(fulls_canal);
 
 return (NULL);
 }
-

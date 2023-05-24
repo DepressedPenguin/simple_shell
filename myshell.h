@@ -36,6 +36,7 @@ char **read_stdin(char *input);
  * Return: always return to The full path of the command.
  */
 char *find_wayy(char *commands);
+int should_exit;
 
 /**
  * exes_cmds - Executes the given commands.

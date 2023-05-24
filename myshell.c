@@ -1,8 +1,15 @@
 #include "myshell.h"
 
-int should_exit = 0;
-char **exe_name_cmd;
-char *current_directory;
+void free_tokens(char **argz)
+{
+    int i = 0;
+    while (argz[i] != NULL)
+    {
+        free(argz[i]);
+        i++;
+    }
+    free(argz);
+}
 
 char **read_stdin(char *input)
 {
@@ -21,12 +28,14 @@ char **read_stdin(char *input)
     {
         if (v >= MAX_ARZ - 1)
         {
+            free_tokens(argz);
             return NULL;
         }
 
         argz[v] = malloc(sizeof(char) * MAXA_LEN);
         if (argz[v] == NULL)
         {
+            free_tokens(argz);
             return NULL;
         }
 
@@ -39,6 +48,7 @@ char **read_stdin(char *input)
 
     return argz;
 }
+
 
 char *find_wayy(char *commands)
 {
@@ -67,47 +77,5 @@ char *find_wayy(char *commands)
     free(fulls_canal);
 
     return NULL;
-}
-
-int main(__attribute__((unused)) int argc, char *argv[])
-{
-    char *stdput = NULL;
-    size_t stdput_leng = 0;
-    char **args;
-    exe_name_cmd = argv;
-    current_directory = getcwd(NULL, 0);
-    setenv("PWD", current_directory, 1);
-
-    while (!should_exit)
-    {
-        write(STDOUT_FILENO, "$ ", 2);
-
-        getline(&stdput, &stdput_leng, stdin);
-        stdput[strcspn(stdput, "\n")] = 0;
-        args = read_stdin(stdput);
-        if (args[0] != NULL)
-        {
-            if (strcmp(args[0], "exit") == 0)
-            {
-                exit_myshell(args);
-            }
-            else if (strcmp(args[0], "env") == 0)
-            {
-                printing_env();
-            }
-            else if (strcmp(args[0], "cd") == 0)
-            {
-                change_directory(args);
-            }
-            else
-            {
-                exes_cmds(args);
-            }
-        }
-    }
-
-    free(stdput);
-    free(current_directory);
-    return 0;
 }
 

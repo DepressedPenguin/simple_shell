@@ -1,61 +1,82 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/wait.h>
 
-extern char **environ;
+#define MAXC_LENZ 1024
+#define MAX_ARGZ 64
+#define MAXA_LENZ 128
 
-char* readCommand() {
-    char *command = NULL;
-    size_t bufsize = 0;
+char **read_stdins(char *input) {
+    char **argz;
+    char *sign;
+    int x;
 
-    printf("#cisfun$ ");
-    if (getline(&command, &bufsize, stdin) == -1) {
-        if (feof(stdin)) {
-            printf("\n");
+    argz = (char **) malloc(sizeof(char*) * MAX_ARGZ);
+    if (argz == NULL) {
+        return NULL;
+    }
+
+    sign = strtok(input, " ");
+    for (x = 0; sign != NULL; x++) {
+        if (x >= MAX_ARGZ - 1) {
             return NULL;
         }
-        perror("getline");
-        exit(EXIT_FAILURE);
-    }
 
-    if (command[strlen(command) - 1] == '\n')
-        command[strlen(command) - 1] = '\0';
-
-    return command;
-}
-
-void executeCommand(char* command) {
-    if (access(command, X_OK) == 0) {
-        if (fork() == 0) {
-            char **argv = malloc(2 * sizeof(char *));
-            argv[0] = command;
-            argv[1] = NULL;
-
-            if (execve(command, argv, environ) == -1) {
-                perror(command);
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            wait(NULL);
+        argz[x] = (char*) malloc(sizeof(char) * MAXA_LENZ);
+        if (argz[x] == NULL) {
+            return NULL;
         }
+
+        strcpy(argz[x], sign);
+
+        sign = strtok(NULL, " ");
+    }
+
+    argz[x] = NULL;
+
+    return argz;
+}
+
+void enforce_cmd(char** arjs) {
+    pid_t pids = fork();
+    if (pids == 0) {
+        char *envp[] = { NULL };
+        execve(arjs[0], arjs, envp);
+        printf(" ./shell: No such file or directory\n");
+        exit(1);
+    } else if (pids > 0) {
+        wait(NULL);
     } else {
-        fprintf(stderr, "%s: No such file or directory\n", command);
+        printf("Failed to fork process\n");
+        exit(1);
     }
 }
 
-int main(void) {
-    char *command;
+int main() {
+    char *btn = NULL;
+    size_t stdinz_size = 0;
+    char **arjs;
+    int i;
 
     while (1) {
-        command = readCommand();
-        if (command == NULL)
-            break;
-        executeCommand(command);
+        printf("$ ");
+        getline(&btn, &stdinz_size, stdin);
+
+        btn[strlen(btn)-1] = '\0';
+
+        arjs = read_stdins(btn);
+
+        enforce_cmd(arjs);
+
+        for (i = 0; arjs[i] != NULL; i++) {
+            free(arjs[i]);
+        }
+        free(arjs);
     }
 
-    free(command);
-    return EXIT_SUCCESS;
+    free(btn);
+    return 0;
 }
 

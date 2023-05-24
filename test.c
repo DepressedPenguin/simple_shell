@@ -12,12 +12,12 @@
 char **exe_name_cmd;
 char *current_directory;
 void free_char_array(char **array) {
-   int i;
-   if (array == NULL) {
+	int i;
+    if (array == NULL) {
         return;
     }
     
-    for ( i = 0; array[i] != NULL; i++) {
+    for (i = 0; array[i] != NULL; i++) {
         free(array[i]);
     }
     
@@ -38,10 +38,6 @@ int i = 0 ;
     
     for (v = 0; toksign != NULL; v++) {
         if (v >= MAX_ARZ - 1) {
-            
-            for (i = 0; i < v; i++) {
-                free(argz[i]);
-            }
             free(argz);
             return NULL;
         }
@@ -102,18 +98,21 @@ void exes_cmds(char** args) {
 
             if (cmd_path == 0) {
                 printf("%s: No such file or directory\n",  exe_name_cmd[0]);
+free (cmd_path);
+free_char_array(args);
                 exit(1);
             }
 
             execve(cmd_path, args, NULL);
 free (cmd_path);
-
         }
         printf("%s: failed to execute\n", args[0]);
         exit(1);
+
     } else if (pds > 0) {
         wait(NULL);
     } else {
+free_char_array(args);
         exit(1);
     }
 }
@@ -123,11 +122,8 @@ void exit_myshell(char** args) {
         if (args[1] != NULL) {
 
             int exit_status = atoi(args[1]);
-free_char_array(args);
             exit(exit_status);
         } else {
-free_char_array(args);
-
             exit(0); 
         }
     }
@@ -155,6 +151,7 @@ printf("cd: %s: No such file or directory\n", new_directory);
 }
 if (previous_directory != NULL)
     free(previous_directory);
+free_char_array(args);
 }
 
 void printing_env() {
@@ -214,6 +211,9 @@ current_directory = getcwd(NULL, 0);
 setenv("PWD", current_directory, 1);
 
 while (1) {
+free(stdput);
+free(current_directory);
+free_char_array(args);
     printf("$ ");
     _getly(&stdput, &stdput_leng, stdin);
     stdput[strcspn(stdput, "\n")] = 0;
@@ -232,8 +232,6 @@ while (1) {
         }
     }
 }
-
 free(stdput);
-free(current_directory);
 return 0;
 }

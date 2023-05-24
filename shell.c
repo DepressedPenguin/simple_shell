@@ -40,13 +40,12 @@ char **read_stdins(char *input) {
 }
 
 void enforce_cmd(char** arjs) {
-    pid_t pids = fork();
-    if (pids == 0) {
-        char *envp[] = { NULL };
-        execve(arjs[0], arjs, envp);
-        printf("./shell: No such file or directory\n");
+    pid_t pid = fork();
+    if (pid == 0) {
+        execvp(arjs[0], arjs);
+        printf("./shell: Command not found: %s\n", arjs[0]);
         exit(1);
-    } else if (pids > 0) {
+    } else if (pid > 0) {
         wait(NULL);
     } else {
         printf("Failed to fork process\n");
@@ -62,11 +61,20 @@ int main() {
 
     while (1) {
         printf("$ ");
-        getline(&btn, &stdinz_size, stdin);
+        if (getline(&btn, &stdinz_size, stdin) == -1) {
+            printf("Error reading input\n");
+            break;
+        }
 
-        btn[strlen(btn)-1] = '\0';
+        if (btn[strlen(btn)-1] == '\n') {
+            btn[strlen(btn)-1] = '\0';
+        }
 
         arjs = read_stdins(btn);
+        if (arjs == NULL) {
+            printf("Failed to parse input\n");
+            continue;
+        }
 
         enforce_cmd(arjs);
 
@@ -79,3 +87,4 @@ int main() {
     free(btn);
     return 0;
 }
+

@@ -26,11 +26,11 @@ void change_directory(char **args)
     char *previous_directory = current_directory;
     if (args[1] == NULL || strcmp(args[1], "~") == 0)
     {
-        new_directory = getenv("HOME");
+        new_directory = _getenv("HOME");
     }
     else if (strcmp(args[1], "-") == 0)
     {
-        new_directory = getenv("OLDPWD");
+        new_directory = _getenv("OLDPWD");
     }
     else
     {

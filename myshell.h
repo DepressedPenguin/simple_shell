@@ -69,6 +69,7 @@ void printing_env(void);
  * Return: The number of characters read.
  */
 ssize_t _getly(char **lineptr, size_t *n, FILE *stream);
+char *_getenv(const char *name);
 
 #endif /* _SHELL_H_ */
 

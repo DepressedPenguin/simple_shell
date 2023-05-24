@@ -42,7 +42,7 @@ char **read_stdin(char *input)
 
 char *find_wayy(char *commands)
 {
-    char *wayy = getenv("PATH");
+    char *wayy = _getenv("PATH");
     char *dr;
     char *fulls_canal = malloc(sizeof(char) * (MAXC_LEN + 1));
 

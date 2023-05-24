@@ -21,24 +21,22 @@ char* my_strtok(char* str, const char* delimiters) {
         return NULL;
     }
 
-    // Skip leading delimiters
     while (*nextToken != '\0' && strchr(delimiters, *nextToken) != NULL) {
         nextToken++;
     }
 
     if (*nextToken == '\0') {
-        return NULL; // Reached the end of the string
+        return NULL;
     }
 
     tokenStart = nextToken;
 
-    // Find the end of the token
     while (*nextToken != '\0' && strchr(delimiters, *nextToken) == NULL) {
         nextToken++;
     }
 
     if (*nextToken != '\0') {
-        *nextToken = '\0'; // Null-terminate the token
+        *nextToken = '\0';
         nextToken++;
     }
 

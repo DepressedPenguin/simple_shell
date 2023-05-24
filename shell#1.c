@@ -44,7 +44,7 @@ void enforce_cmd(char** arjs) {
     if (pids == 0) {
         char *envp[] = { NULL };
         execve(arjs[0], arjs, envp);
-        printf(" ./shell: No such file or directory\n");
+        printf("./shell: No such file or directory\n");
         exit(1);
     } else if (pids > 0) {
         wait(NULL);

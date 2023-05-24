@@ -54,6 +54,15 @@ void executeCommand(char** args, const char* executableName, int commandNumber) 
     }
 }
 
+void printEnvironment() {
+    extern char** environ;
+    int i = 0;
+    while (environ[i] != NULL) {
+        printf("%s\n", environ[i]);
+        i++;
+    }
+}
+
 int main(int argc, char *argv[]) {
     char command[MAX_COMMAND_LENGTH];
     char** args = NULL;
@@ -87,6 +96,9 @@ int main(int argc, char *argv[]) {
 
         if (strcmp(command, "exit") == 0) {
             break;
+        } else if (strcmp(command, "env") == 0) {
+            printEnvironment();
+            continue;
         }
 
         commandNumber++;
@@ -108,3 +120,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

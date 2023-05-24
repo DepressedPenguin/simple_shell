@@ -1,24 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <limits.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stddef.h>
 #include "myshell.h"
+#include <ctype.h>
 
-#define MAXC_LEN 1024
-#define MAX_ARZ 64
-#define MAXA_LEN 128
-#define BUFFER_SIZE 1024
-
-extern char **environ;
-char *current_directory;
-char **exe_name_cmd;
 /**
  * main - Entry point for the program
  * @argc: Number of command-line arguments
@@ -66,7 +48,6 @@ free(stdput);
 free(current_directory);
 return (0);
 }
-#include "myshell.h"
 
 /**
  * read_stdin - Tokenizes the input string and stores tokens.
@@ -144,27 +125,36 @@ free(fulls_canal);
 
 return (NULL);
 }
-#include "myshell.h"
 /**
  * exit_myshell- function that exits the program
  * @args: arguments
  * Return: None
  */
+
+int should_exit = 0;  
+
 void exit_myshell(char **args)
 {
-if (strcmp(args[0], "exit") == 0)
-{
-if (args[1] != NULL)
-{
-int exit_status = atoi(args[1]);
-exit(exit_status);
+    int exit_code = 0;
+    if (args[1] != NULL)
+    {
+        int i = 0;
+        while (args[1][i])
+        {
+            if (!isdigit(args[1][i++]))
+            {
+                perror("illegal number");
+                return;
+            }
+        }
+        exit_code = atoi(args[1]);
+    }
+
+    should_exit = 1;
+    exit(exit_code);
 }
-else
-{
-exit(0);
-}
-}
-}
+
+
 /**
  * change_directory - to Change the current working directory
  * @args: An array of arguments
@@ -210,7 +200,7 @@ printf("%s\n", *env);
 env++;
 }
 }
-#include "myshell.h"
+
 
 /**
  * _getly - a line is read from a file stream.
@@ -262,7 +252,6 @@ return (-1);
 
 return (num_chars);
 }
-#include "myshell.h"
 
 /**
  * exes_cmds - Run commands with the specified parameters.

@@ -7,46 +7,46 @@
  * @argv: Array of command-line argument strings
  * Return: alawys 0
 */
+int main(__attribute__((unused)) int argc, char *argv[])
+{
+    char *stdput = NULL;
+    size_t stdput_leng = 0;
+    char **args;
+    exe_name_cmd = argv;
+    current_directory = getcwd(NULL, 0);
+    setenv("PWD", current_directory, 1);
 
-int main(__attribute__((unused))int argc, char *argv[])
-{
-char *stdput = NULL;
-size_t stdput_leng = 0;
-char **args;
-exe_name_cmd = argv;
-current_directory = getcwd(NULL, 0);
-setenv("PWD", current_directory, 1);
+    while (1)
+    {
+        write(STDOUT_FILENO, "$ ", 2);
 
-while (1)
-{
-printf("$ ");
-getline(&stdput, &stdput_leng, stdin);
-stdput[strcspn(stdput, "\n")] = 0;
-args = read_stdin(stdput);
-if (args[0] != NULL)
-{
-if (strcmp(args[0], "exit") == 0)
-{
-exit_myshell(args);
-}
-else if (strcmp(args[0], "env") == 0)
-{
-printing_env();
-}
-else if (strcmp(args[0], "cd") == 0)
-{
-change_directory(args);
-}
-else
-{
-exes_cmds(args);
-}
-}
-}
+        getline(&stdput, &stdput_leng, stdin);
+        stdput[strcspn(stdput, "\n")] = 0;
+        args = read_stdin(stdput);
+        if (args[0] != NULL)
+        {
+            if (strcmp(args[0], "exit") == 0)
+            {
+                exit_myshell(args);
+            }
+            else if (strcmp(args[0], "env") == 0)
+            {
+                printing_env();
+            }
+            else if (strcmp(args[0], "cd") == 0)
+            {
+                change_directory(args);
+            }
+            else
+            {
+                exes_cmds(args);
+            }
+        }
+    }
 
-free(stdput);
-free(current_directory);
-return (0);
+    free(stdput);
+    free(current_directory);
+    return (0);
 }
 
 /**
@@ -260,37 +260,43 @@ return (num_chars);
  */
 void exes_cmds(char **args)
 {
+char error_msg[64];
 char *cmd_path;
-pid_t pds = fork();
+    pid_t pds = fork();
 
-if (pds == 0)
-{
-if (args[0][0] == '/')
-{
-execve(args[0], args, environ);
-}
-else
-{
-cmd_path = find_wayy(args[0]);
+    if (pds == 0)
+    {
+        if (args[0][0] == '/')
+        {
+            execve(args[0], args, environ);
+        }
+        else
+        {
+            cmd_path = find_wayy(args[0]);
 
-if (cmd_path == NULL)
-{
-printf("%s: No such file or directory\n", exe_name_cmd[0]);
-exit(1);
-}
+            if (cmd_path == NULL)
+            {
+                snprintf(error_msg, sizeof(error_msg), "%s: No such file or directory\n", exe_name_cmd[0]);
+                write(STDERR_FILENO, error_msg, strlen(error_msg));
+                free(cmd_path);
+                exit(1);
+            }
 
-execve(cmd_path, args, environ);
-}
+            execve(cmd_path, args, environ);
+            free(cmd_path);
+        }
 
-printf("%s: failed to execute\n", args[0]);
-exit(1);
-}
-else if (pds > 0)
-{
-wait(NULL);
-}
-else
-{
-exit(1);
-}
+        snprintf(error_msg, sizeof(error_msg), "%s: failed to execute\n", args[0]);
+        write(STDERR_FILENO, error_msg, strlen(error_msg));
+        exit(1);
+    }
+    else if (pds > 0)
+    {
+        wait(NULL);
+    }
+    else
+    {
+        perror("fork");
+        exit(1);
+    }
 }

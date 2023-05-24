@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stddef.h>
-
+#include <ctype.h>
 #define MAXC_LEN 1024
 #define MAX_ARZ 64
 #define MAXA_LEN 128

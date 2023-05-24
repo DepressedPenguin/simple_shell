@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stddef.h>
+#include "myshell.h"
 
 #define MAXC_LEN 1024
 #define MAX_ARZ 64
@@ -18,7 +19,6 @@
 extern char **environ;
 char *current_directory;
 char **exe_name_cmd;
-#include "myshell.h"
 /**
  * main - Entry point for the program
  * @argc: Number of command-line arguments

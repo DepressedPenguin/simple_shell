@@ -26,7 +26,7 @@ char* my_strtok(char* str, const char* delimiters) {
     }
 
     if (*nextToken == '\0') {
-        return NULL;
+        return NULL; 
     }
 
     tokenStart = nextToken;
@@ -76,25 +76,76 @@ void freeArguments(char** args) {
 
 void executeCommand(char** args, const char* executableName, int commandNumber) {
     pid_t pid;
+    char* path , *pathEnv, *commandPath , * token ;
     int status;
 
-    pid = fork();
-    if (pid < 0) {
-        perror("Fork failed");
-        exit(EXIT_FAILURE);
-    } else if (pid == 0) {
-        if (execvp(args[0], args) == -1) {
-            fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
+    if (strchr(args[0], '/') != NULL) {
+        pid = fork();
+        if (pid < 0) {
+            perror("Fork failed");
             exit(EXIT_FAILURE);
-        }
-    } else {
-        do {
-            pid_t wpid = waitpid(pid, &status, WUNTRACED);
-            if (wpid == -1) {
-                perror("Waitpid failed");
+        } else if (pid == 0) {
+            if (execve(args[0], args, environ) == -1) {
+                fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
                 exit(EXIT_FAILURE);
             }
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        } else {
+            do {
+                pid_t wpid = waitpid(pid, &status, WUNTRACED);
+                if (wpid == -1) {
+                    perror("Waitpid failed");
+                    exit(EXIT_FAILURE);
+                }
+            } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        }
+    } else {
+         pathEnv = getenv("PATH");
+        if (pathEnv == NULL) {
+            fprintf(stderr, "Failed to get the PATH environment variable\n");
+            return;
+        }
+
+        path = strdup(pathEnv);
+        if (path == NULL) {
+            perror("Memory allocation failed");
+            exit(EXIT_FAILURE);
+        }
+
+        token = strtok(path, ":");
+        while (token != NULL) {
+             commandPath = (char*)malloc((strlen(token) + strlen(args[0]) + 2) * sizeof(char));
+            if (commandPath == NULL) {
+                perror("Memory allocation failed");
+                exit(EXIT_FAILURE);
+            }
+
+            sprintf(commandPath, "%s/%s", token, args[0]);
+
+            pid = fork();
+            if (pid < 0) {
+                perror("Fork failed");
+                exit(EXIT_FAILURE);
+            } else if (pid == 0) {
+                if (execve(commandPath, args, environ) == -1) {
+                    exit(EXIT_FAILURE);
+                }
+            } else {
+                do {
+                    pid_t wpid = waitpid(pid, &status, WUNTRACED);
+                    if (wpid == -1) {
+                        perror("Waitpid failed");
+                        exit(EXIT_FAILURE);
+                    }
+                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+            }
+
+            free(commandPath);
+
+            token = strtok(NULL, ":");
+        }
+
+        fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
+        free(path);
     }
 }
 
@@ -106,34 +157,6 @@ int changeDirectory(char** args, int argCount) {
 
     if (chdir(args[1]) != 0) {
         perror("cd failed");
-        return 1;
-    }
-
-    return 0;
-}
-
-int setEnvironmentVariable(char** args, int argCount) {
-    if (argCount != 3) {
-        fprintf(stderr, "setenv: invalid number of arguments\n");
-        return 1;
-    }
-
-    if (setenv(args[1], args[2], 1) != 0) {
-        perror("setenv failed");
-        return 1;
-    }
-
-    return 0;
-}
-
-int unsetEnvironmentVariable(char** args, int argCount) {
-    if (argCount != 2) {
-        fprintf(stderr, "unsetenv: invalid number of arguments\n");
-        return 1;
-    }
-
-    if (unsetenv(args[1]) != 0) {
-        perror("unsetenv failed");
         return 1;
     }
 
@@ -173,9 +196,7 @@ int main(int argc, char *argv[]) {
 
         lineSize = getline(&command, &bufferSize, inputStream);
         if (lineSize == -1) {
-            if (interactiveMode) {
-                printf("\n");
-            }
+            printf("\n");
             break;
         }
         command[lineSize - 1] = '\0';
@@ -198,14 +219,6 @@ int main(int argc, char *argv[]) {
             if (strcmp(args[0], "cd") == 0) {
                 if (changeDirectory(args, argCount) != 0) {
                     fprintf(stderr, "Failed to change directory\n");
-                }
-            } else if (strcmp(args[0], "setenv") == 0) {
-                if (setEnvironmentVariable(args, argCount) != 0) {
-                    fprintf(stderr, "Failed to set environment variable\n");
-                }
-            } else if (strcmp(args[0], "unsetenv") == 0) {
-                if (unsetEnvironmentVariable(args, argCount) != 0) {
-                    fprintf(stderr, "Failed to unset environment variable\n");
                 }
             } else {
                 executeCommand(args, argv[0], commandNumber);

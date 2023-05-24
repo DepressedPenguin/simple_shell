@@ -4,68 +4,21 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <errno.h>
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
-extern char **environ;
-
-char* my_strtok(char* str, const char* delimiters) {
-    static char* nextToken = NULL;
-    char* tokenStart;
-
-    if (str != NULL) {
-        nextToken = str;
-    }
-
-    if (nextToken == NULL) {
-        return NULL;
-    }
-
-    while (*nextToken != '\0' && strchr(delimiters, *nextToken) != NULL) {
-        nextToken++;
-    }
-
-    if (*nextToken == '\0') {
-        return NULL; 
-    }
-
-    tokenStart = nextToken;
-
-    while (*nextToken != '\0' && strchr(delimiters, *nextToken) == NULL) {
-        nextToken++;
-    }
-
-    if (*nextToken != '\0') {
-        *nextToken = '\0'; 
-        nextToken++;
-    }
-
-    return tokenStart;
-}
 
 void tokenizeCommand(char* command, char*** args, int* argCount) {
-    char* token;
     int argIndex = 0;
+    char* token;
 
-    token = my_strtok(command, " \t\n");
-    if (token == NULL) {
-        *argCount = 0;
-        return;
-    }
-    (*args)[argIndex] = strdup(token);
-    argIndex++;
-
+    token = strtok(command, " \t\n");
     while (token != NULL && argIndex < MAX_ARGS - 1) {
-        token = my_strtok(NULL, " \t\n");
-        if (token != NULL) {
-            (*args)[argIndex] = strdup(token);
-            argIndex++;
-        }
+        (*args)[argIndex] = strdup(token);
+        argIndex++;
+        token = strtok(NULL, " \t\n");
     }
-
     (*args)[argIndex] = NULL;
-
     *argCount = argIndex;
 }
 
@@ -77,59 +30,53 @@ void freeArguments(char** args) {
     free(args);
 }
 
-void executeCommand(char** args, const char* executableName) {
-    char* fullPath;
-    pid_t pid;
-    int status;
+void executeCommand(char** args, const char* executableName, int commandNumber, char** envp) {
+    char* command = args[0];
+    char* path = getenv("PATH");
+    char* token;
 
-    fullPath = args[0];
-    if (strchr(args[0], '/') == NULL) {
-        char* path = getenv("PATH");
-        if (path != NULL) {
-            char* token = strtok(path, ":");
-            while (token != NULL) {
-                char* temp = malloc(strlen(token) + strlen(args[0]) + 2);
-                strcpy(temp, token);
-                strcat(temp, "/");
-                strcat(temp, args[0]);
+    while ((token = strtok(path, ":")) != NULL) {
+        char executablePath[MAX_COMMAND_LENGTH];
+        snprintf(executablePath, sizeof(executablePath), "%s/%s", token, command);
 
-                if (access(temp, X_OK) == 0) {
-                    fullPath = temp;
-                    break;
-                }
+        if (access(executablePath, X_OK) == 0) {
+            pid_t pid;
+            int status;
 
-                free(temp);
-                token = strtok(NULL, ":");
-            }
-        }
-    }
-
-    pid = fork();
-    if (pid < 0) {
-        perror(executableName);
-        exit(EXIT_FAILURE);
-    } else if (pid == 0) {
-        if (execve(fullPath, args, environ) == -1) {
-            perror(executableName);
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        do {
-            pid_t wpid = waitpid(pid, &status, WUNTRACED);
-            if (wpid == -1) {
-                perror(executableName);
+            pid = fork();
+            if (pid < 0) {
+                perror("Fork failed");
                 exit(EXIT_FAILURE);
+            } else if (pid == 0) {
+                if (execve(executablePath, args, envp) < 0) {
+                    fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, command);
+                    exit(EXIT_FAILURE);
+                }
+            } else {
+                do {
+                    pid_t wpid = waitpid(pid, &status, WUNTRACED);
+                    if (wpid == -1) {
+                        perror("Waitpid failed");
+                        exit(EXIT_FAILURE);
+                    }
+                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
             }
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+
+            return;
+        }
+
+        path = NULL;
     }
+
+    fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, command);
 }
 
-int main(int argc, char *argv[]) {
-    char* command = NULL;
+int main(int argc, char *argv[], char *envp[]) {
+    char command[MAX_COMMAND_LENGTH];
     char** args = NULL;
     int argCount = 0;
-    size_t bufferSize = MAX_COMMAND_LENGTH;
-    ssize_t lineSize;
+    int commandNumber = 0;
+
     FILE *inputStream = stdin;
     int interactiveMode = 1;
 
@@ -137,7 +84,7 @@ int main(int argc, char *argv[]) {
         inputStream = fopen(argv[1], "r");
         interactiveMode = 0;
         if (inputStream == NULL) {
-            perror(argv[0]);
+            perror("Failed to open the script file");
             exit(EXIT_FAILURE);
         }
     }
@@ -148,38 +95,28 @@ int main(int argc, char *argv[]) {
             fflush(stdout);
         }
 
-        command = (char*)malloc(bufferSize * sizeof(char));
-        if (command == NULL) {
-            perror(argv[0]);
-            exit(EXIT_FAILURE);
-        }
-
-        lineSize = getline(&command, &bufferSize, inputStream);
-        if (lineSize == -1) {
+        if (fgets(command, sizeof(command), inputStream) == NULL) {
             printf("\n");
             break;
         }
-        command[lineSize - 1] = '\0';
+
+        command[strcspn(command, "\n")] = '\0';
 
         if (strcmp(command, "exit") == 0) {
-            free(command);
             break;
         }
 
+        commandNumber++;
+
         args = (char**) malloc((MAX_ARGS + 1) * sizeof(char*));
         if (args == NULL) {
-            perror(argv[0]);
+            perror("Memory allocation failed");
             exit(EXIT_FAILURE);
         }
 
         tokenizeCommand(command, &args, &argCount);
-        if (argCount > 0) {
-            executeCommand(args, argv[0]);
-        }
-
+        executeCommand(args, argv[0], commandNumber, envp);
         freeArguments(args);
-        free(command);
-        command = NULL;
     }
 
     if (!interactiveMode) {

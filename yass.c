@@ -36,7 +36,7 @@ char* my_strtok(char* str, const char* delimiters) {
     }
 
     if (*nextToken != '\0') {
-        *nextToken = '\0';
+        *nextToken = '\0'; 
         nextToken++;
     }
 
@@ -173,7 +173,9 @@ int main(int argc, char *argv[]) {
 
         lineSize = getline(&command, &bufferSize, inputStream);
         if (lineSize == -1) {
-            printf("\n");
+            if (interactiveMode) {
+                printf("\n");
+            }
             break;
         }
         command[lineSize - 1] = '\0';
@@ -221,3 +223,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

@@ -33,14 +33,50 @@ void freeArguments(char** args) {
 void executeCommand(char** args, const char* executableName, int commandNumber) {
     pid_t pid;
     int status;
+    char* commandPath;
+    char* token;
+        char* pathTokenized;
+	char* path;
+
+    if (args[0][0] == '/') {
+        commandPath = strdup(args[0]);
+    } else {
+        path = getenv("PATH");
+        if (path == NULL) {
+            fprintf(stderr, "Error: PATH environment variable not found\n");
+            return;
+        }
+
+        pathTokenized = strdup(path);
+        token = strtok(pathTokenized, ":");
+        while (token != NULL) {
+            commandPath = (char*)malloc(strlen(token) + strlen(args[0]) + 2);
+            strcpy(commandPath, token);
+            strcat(commandPath, "/");
+            strcat(commandPath, args[0]);
+
+            if (access(commandPath, F_OK) == 0) {
+                break;
+            }
+
+            free(commandPath);
+            token = strtok(NULL, ":");
+        }
+
+        free(pathTokenized);
+        if (commandPath == NULL) {
+            fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
+            return;
+        }
+    }
 
     pid = fork();
     if (pid < 0) {
         perror("Fork failed");
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
-        if (execvp(args[0], args) < 0) {
-            fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, args[0]);
+        if (execvp(commandPath, args) < 0) {
+            fprintf(stderr, "%s: %d: %s: command not found\n", executableName, commandNumber, args[0]);
             exit(EXIT_FAILURE);
         }
     } else {
@@ -52,6 +88,8 @@ void executeCommand(char** args, const char* executableName, int commandNumber) 
             }
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
+
+    free(commandPath);
 }
 
 int main(int argc, char *argv[]) {
@@ -108,3 +146,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+

@@ -12,14 +12,14 @@ char **yass_zak;
 void ryn_myshell(void);
 void exes_cmd(char **args);
 void exes_myexev(char **args);
-char **fuc_args(char *linee);
+char **fuc_args(char *fucle);
 int fuc_bul(char **args);
 void exe_built(char **args);
 void free_myarg(char **args);
 void print_prompt(void);
 void myp_id(void);
 void print_fuid(void);
-void print_mstat(char *file_name);
+void print_mstat(char *f_name);
 char *_getenv(const char *getname);
 char *get_line(void);
 
@@ -45,17 +45,17 @@ char *_getenv(const char *getname)
     return NULL;
 }
 
-void print_mstat(char *file_name)
+void print_mstat(char *f_name)
 {
     struct stat file_stat;
     char buffer[1024];
     int len;
-    if (stat(file_name, &file_stat) == -1)
+    if (stat(f_name, &file_stat) == -1)
     {
         perror("stat");
         return;
     }
-    len = sprintf(buffer, "File: %s\n", file_name);
+    len = sprintf(buffer, "File: %s\n", f_name);
     write(STDOUT_FILENO, buffer, len);
 }
 
@@ -64,7 +64,7 @@ void print_mstat(char *file_name)
 
 void ryn_myshell(void)
 {
-    char *linee = NULL;
+    char *fucle = NULL;
     char **args;
     size_t len = 0;
     ssize_t read;
@@ -72,13 +72,13 @@ void ryn_myshell(void)
     {
         if (isatty(0))
             print_prompt();
-        read = getline(&linee, &len, stdin);
+        read = getline(&fucle, &len, stdin);
         if (read == -1)
         {
-            free(linee);
+            free(fucle);
             exit(0);
         }
-        args = fuc_args(linee);
+        args = fuc_args(fucle);
         if (!args[0])
         {
             free_myarg(args);
@@ -94,7 +94,7 @@ void ryn_myshell(void)
         }
         free_myarg(args);
     }
-    free(linee);
+    free(fucle);
 }
 
 void free_myarg(char **args)
@@ -158,12 +158,12 @@ int fuc_bul(char **args)
 }
 
 
-char **fuc_args(char *linee)
+char **fuc_args(char *fucle)
 {
     char **args = malloc(IMAX_ARGS * sizeof(char *));
     char *tkn;
     int i = 0;
-    tkn = strtok(linee, " \t\n;");
+    tkn = strtok(fucle, " \t\n;");
     while (tkn != NULL && i < IMAX_ARGS)
     {
         args[i++] = strdup(tkn);
@@ -224,7 +224,7 @@ void exes_cmd(char **args)
 
 void exes_myexev(char **args)
 {
-    char *d, *cmdpvth, *my_pathy, *commy;
+    char *d, *cmd_ppath, *my_pathy, *commy;
     char *err_msg;
     size_t len;
     int i;
@@ -242,15 +242,15 @@ void exes_myexev(char **args)
 
         while (d != NULL)
         {
-            cmdpvth = malloc(strlen(d) + strlen(commy) + 2);
-            sprintf(cmdpvth, "%s/%s", d, commy);
+            cmd_ppath = malloc(strlen(d) + strlen(commy) + 2);
+            sprintf(cmd_ppath, "%s/%s", d, commy);
 
-            if (access(cmdpvth, X_OK) == 0)
+            if (access(cmd_ppath, X_OK) == 0)
             {
-                execve(cmdpvth, args, environ);
+                execve(cmd_ppath, args, environ);
             }
 
-            free(cmdpvth);
+            free(cmd_ppath);
             d = strtok(NULL, ":");
         }
     }

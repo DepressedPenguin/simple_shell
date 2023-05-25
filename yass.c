@@ -8,70 +8,13 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_ARGS 64
 
-void tokenizeCommand(char* command, char*** args, int* argCount) {
-    int argIndex = 0;
-    char* token;
+void tokenizeCommand(char* command, char*** args, int* argCount);
 
-    token = strtok(command, " \t\n");
-    while (token != NULL && argIndex < MAX_ARGS - 1) {
-        (*args)[argIndex] = strdup(token);
-        argIndex++;
-        token = strtok(NULL, " \t\n");
-    }
-    (*args)[argIndex] = NULL;
-    *argCount = argIndex;
-}
+void freeArguments(char** args);
 
-void freeArguments(char** args) {
-    int i;
-    for (i = 0; args[i] != NULL; i++) {
-        free(args[i]);
-    }
-    free(args);
-}
+void executeCommand(char** args, const char* executableName, int commandNumber);
 
-void executeCommand(char** args, const char* executableName, int commandNumber, char** envp) {
-    char* command = args[0];
-    char* path = getenv("PATH");
-    char* token;
-
-    while ((token = strtok(path, ":")) != NULL) {
-        char executablePath[MAX_COMMAND_LENGTH];
-        snprintf(executablePath, sizeof(executablePath), "%s/%s", token, command);
-
-        if (access(executablePath, X_OK) == 0) {
-            pid_t pid;
-            int status;
-
-            pid = fork();
-            if (pid < 0) {
-                perror("Fork failed");
-                exit(EXIT_FAILURE);
-            } else if (pid == 0) {
-                if (execve(executablePath, args, envp) < 0) {
-                    fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, command);
-                    exit(EXIT_FAILURE);
-                }
-            } else {
-                do {
-                    pid_t wpid = waitpid(pid, &status, WUNTRACED);
-                    if (wpid == -1) {
-                        perror("Waitpid failed");
-                        exit(EXIT_FAILURE);
-                    }
-                } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-            }
-
-            return;
-        }
-
-        path = NULL;
-    }
-
-    fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, command);
-}
-
-int main(int argc, char *argv[], char *envp[]) {
+int main(int argc, char *argv[]) {
     char command[MAX_COMMAND_LENGTH];
     char** args = NULL;
     int argCount = 0;
@@ -115,7 +58,7 @@ int main(int argc, char *argv[], char *envp[]) {
         }
 
         tokenizeCommand(command, &args, &argCount);
-        executeCommand(args, argv[0], commandNumber, envp);
+        executeCommand(args, argv[0], commandNumber);
         freeArguments(args);
     }
 
@@ -124,5 +67,51 @@ int main(int argc, char *argv[], char *envp[]) {
     }
 
     return 0;
+}
+
+void tokenizeCommand(char* command, char*** args, int* argCount) {
+    char* token;
+    int argIndex = 0;
+
+    token = strtok(command, " \t\n");
+    while (token != NULL && argIndex < MAX_ARGS - 1) {
+        (*args)[argIndex] = strdup(token);
+        argIndex++;
+        token = strtok(NULL, " \t\n");
+    }
+    (*args)[argIndex] = NULL;
+    *argCount = argIndex;
+}
+
+void freeArguments(char** args) {
+    int i;
+    for (i = 0; args[i] != NULL; i++) {
+        free(args[i]);
+    }
+    free(args);
+}
+
+void executeCommand(char** args, const char* executableName, int commandNumber) {
+    pid_t pid;
+    int status;
+
+    pid = fork();
+    if (pid < 0) {
+        perror("Fork failed");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        if (execvp(args[0], args) < 0) {
+            fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, args[0]);
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        do {
+            pid_t wpid = waitpid(pid, &status, WUNTRACED);
+            if (wpid == -1) {
+                perror("Waitpid failed");
+                exit(EXIT_FAILURE);
+            }
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
 }
 

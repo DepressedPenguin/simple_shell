@@ -7,26 +7,26 @@
 #include <sys/types.h>
 
 extern char **environ;
-char **hd;
+char **zak;
 
-void irun_shell(void);
-void exct_commvnd(char **args);
+void run_mycode(void);
+void exes_cmdd(char **args);
 void com_execve(char **args);
-char **thom_args(char *linee);
-int thom_builtin(char **args);
-void execute_builtinthom(char **args);
-void thomfree_args(char **args);
-void thom_prompt(void);
-void pnt_iid(void);
-void pnt_iiid(void);
-void prt_fle_stt(char *file_name);
+char **pars_args(char *linP);
+int fun_bult(char **args);
+void exec_bultts(char **args);
+void free_argsss(char **args);
+void print_out(void);
+void print_myid(void);
+void print_cid(void);
+void printstt(char *F_name);
 char *_getenv(const char *name);
-char *get_line(void);
+char *get_ly(void);
 
 int main(int argc __attribute__((unused)), char **argv)
 {
-    hd = argv;
-    irun_shell();
+    zak = argv;
+    run_mycode();
     return 0;
 }
 
@@ -45,59 +45,59 @@ char *_getenv(const char *name)
     return NULL;
 }
 
-void prt_fle_stt(char *file_name)
+void printstt(char *F_name)
 {
     struct stat file_stat;
     char buffer[1024];
     int len;
-    if (stat(file_name, &file_stat) == -1)
+    if (stat(F_name, &file_stat) == -1)
     {
         perror("stat");
         return;
     }
-    len = sprintf(buffer, "File: %s\n", file_name);
+    len = sprintf(buffer, "File: %s\n", F_name);
     write(STDOUT_FILENO, buffer, len);
 }
 
 #define BUFF_SSIZE 4096
 #define IMAX_ARGS 258
 
-void irun_shell(void)
+void run_mycode(void)
 {
-    char *linee = NULL;
+    char *linP = NULL;
     char **args;
     size_t len = 0;
     ssize_t read;
     while (1)
     {
         if (isatty(0))
-            thom_prompt();
-        read = getline(&linee, &len, stdin);
+            print_out();
+        read = getline(&linP, &len, stdin);
         if (read == -1)
         {
-            free(linee);
+            free(linP);
             exit(0);
         }
-        args = thom_args(linee);
+        args = pars_args(linP);
         if (!args[0])
         {
-            thomfree_args(args);
+            free_argsss(args);
             continue;
         }
-        if (thom_builtin(args))
+        if (fun_bult(args))
         {
-            execute_builtinthom(args);
+            exec_bultts(args);
         }
         else
         {
-            exct_commvnd(args);
+            exes_cmdd(args);
         }
-        thomfree_args(args);
+        free_argsss(args);
     }
-    free(linee);
+    free(linP);
 }
 
-void thomfree_args(char **args)
+void free_argsss(char **args)
 {
     int i;
     for (i = 0; args[i]; i++)
@@ -108,7 +108,7 @@ void thomfree_args(char **args)
 }
 
 
-void execute_builtinthom(char **args)
+void exec_bultts(char **args)
 {
     if (!args || !args[0])
     {
@@ -150,36 +150,34 @@ void execute_builtinthom(char **args)
 
 
 
-int thom_builtin(char **args)
+int fun_bult(char **args)
 {
     return (strcmp(args[0], "exit") == 0 ||
             strcmp(args[0], "cd") == 0 ||
             strcmp(args[0], "env") == 0);
 }
 
-
-char **thom_args(char *linee)
+char **pars_args(char *linP)
 {
     char **args = malloc(IMAX_ARGS * sizeof(char *));
     char *tkn;
     int i = 0;
-    tkn = strtok(linee, " \t\n;");
+    tkn = strtok(linP, " \t\n");
     while (tkn != NULL && i < IMAX_ARGS)
     {
         args[i++] = strdup(tkn);
-        tkn = strtok(NULL, " \t\n;");
+        tkn = strtok(NULL, " \t\n");
     }
     args[i] = NULL;
     return args;
 }
 
-
-void thom_prompt(void)
+void print_out(void)
 {
     write(STDOUT_FILENO, "#yassine$ ", 9);
 }
 
-void pnt_iid(void)
+void print_myid(void)
 {
     char pid_str[100];
     int pid_len;
@@ -187,7 +185,7 @@ void pnt_iid(void)
     write(STDOUT_FILENO, pid_str, pid_len);
 }
 
-void pnt_iiid(void)
+void print_cid(void)
 {
     char ppid_str[100];
     int ppid_len;
@@ -195,69 +193,86 @@ void pnt_iiid(void)
     write(STDOUT_FILENO, ppid_str, ppid_len);
 }
 
-void exct_commvnd(char **args)
+void exes_cmdd(char **args)
 {
-    int i = 0;
-    while (args[i])
+    pid_t iid = fork();
+    if (iid == 0)
     {
-        char *cmd = args[i];
-        if (strcmp(cmd, ";") != 0)
-        {
-            pid_t iid = fork();
-            if (iid == 0)
-            {
-                char **cmd_args = thom_args(cmd);
-                com_execve(cmd_args);
-                thomfree_args(cmd_args);
-                exit(0);
-            }
-            else
-            {
-                waitpid(iid, NULL, 0);
-            }
-        }
-        i++;
+        com_execve(args);
+        exit(0);
+    }
+    else
+    {
+        waitpid(iid, NULL, 0);
     }
 }
 
- 
+char *get_ly(void)
+{
+    static int lenn;
+    static int lenn1;
+    static char buffer[1024];
+    char *liine;
+    int liine_lenn = 0;
+    if (lenn1 >= lenn)
+    {
+        lenn = read(STDIN_FILENO, buffer, 1024);
+        if (lenn <= 0)
+        {
+            return NULL;
+        }
+        lenn1 = 0;
+    }
+    liine = malloc(1024);
+    while (lenn1 < lenn)
+    {
+        if (buffer[lenn1] == '\n')
+        {
+            lenn1++;
+            break;
+        }
+        liine[liine_lenn++] = buffer[lenn1++];
+    }
+    liine[liine_lenn] = '\0';
+    return liine;
+}
 
 void com_execve(char **args)
 {
-    char *d, *cmdpvth, *pth, *commvnd;
+    char *d, *cmdmypath, *pth, *cmdyyd;
     char *error_msg;
     size_t len;
     int i;
 
     for (i = 0; args[i]; i++)
     {
-        commvnd = args[i];
+        cmdyyd = args[i];
 
-        if (access(commvnd, X_OK) == 0)
+        if (access(cmdyyd, X_OK) == 0)
         {
-            execve(commvnd, args, environ);
+            execve(cmdyyd, args, environ);
         }
         pth = _getenv("PATH");
         d = strtok(pth, ":");
 
         while (d != NULL)
         {
-            cmdpvth = malloc(strlen(d) + strlen(commvnd) + 2);
-            sprintf(cmdpvth, "%s/%s", d, commvnd);
+            cmdmypath = malloc(strlen(d) + strlen(cmdyyd) + 2);
+            sprintf(cmdmypath, "%s/%s", d, cmdyyd);
 
-            if (access(cmdpvth, X_OK) == 0)
+            if (access(cmdmypath, X_OK) == 0)
             {
-                execve(cmdpvth, args, environ);
+                execve(cmdmypath, args, environ);
             }
 
-            free(cmdpvth);
+            free(cmdmypath);
             d = strtok(NULL, ":");
         }
     }
 
-    len = strlen(commvnd) + 22;
+    len = strlen(cmdyyd) + 22;
     error_msg = malloc(len);
-    sprintf(error_msg, "not found: %s\n", commvnd);
+    sprintf(error_msg, "not found: %s\n", cmdyyd);
     write(STDERR_FILENO, error_msg, len);
     free(error_msg);
     exit(127);

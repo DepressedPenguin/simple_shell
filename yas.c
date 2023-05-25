@@ -9,144 +9,139 @@
 extern char **environ;
 char **hd;
 
-void run_shell(void);
-void execute_command(char **arguments);
-void execute_execve(char **arguments);
-char **parse_arguments(char *line);
-int is_builtin_command(char **arguments);
-void execute_builtin_command(char **arguments);
-void free_arguments(char **arguments);
-void display_prompt(void);
-void print_process_id(void);
-void print_parent_process_id(void);
-void print_file_status(char *file_name);
-char *_get_environment_variable(const char *name);
-char *read_line(void);
+void irun_shell(void);
+void exct_commvnd(char **args);
+void com_execve(char **args);
+char **thom_args(char *linee);
+int thom_builtin(char **args);
+void execute_builtinthom(char **args);
+void thomfree_args(char **args);
+void thom_prompt(void);
+void pnt_iid(void);
+void pnt_iiid(void);
+void prt_fle_stt(char *file_name);
+char *_getenv(const char *name);
+char *get_line(void);
 
 int main(int argc __attribute__((unused)), char **argv)
 {
     hd = argv;
-    run_shell();
+    irun_shell();
     return 0;
 }
 
-char *_get_environment_variable(const char *name)
+char *_getenv(const char *name)
 {
-    size_t name_length = strlen(name);
-    char **variable;
+    size_t nvmelen = strlen(name);
+    char **var;
 
-    for (variable = environ; *variable != NULL; variable++)
+    for (var = environ; *var != NULL; var++)
     {
-        if (strncmp(name, *variable, name_length) == 0 && (*variable)[name_length] == '=')
+        if (strncmp(name, *var, nvmelen) == 0 && (*var)[nvmelen] == '=')
         {
-            return &((*variable)[name_length + 1]);
+            return &((*var)[nvmelen + 1]);
         }
     }
-
     return NULL;
 }
 
-void print_file_status(char *file_name)
+void prt_fle_stt(char *file_name)
 {
-    struct stat file_status;
+    struct stat file_stat;
     char buffer[1024];
-    int length;
-
-    if (stat(file_name, &file_status) == -1)
+    int len;
+    if (stat(file_name, &file_stat) == -1)
     {
         perror("stat");
         return;
     }
-
-    length = sprintf(buffer, "File: %s\n", file_name);
-    write(STDOUT_FILENO, buffer, length);
+    len = sprintf(buffer, "File: %s\n", file_name);
+    write(STDOUT_FILENO, buffer, len);
 }
 
-#define BUFFER_SIZE 4096
-#define MAX_ARGS 258
+#define BUFF_SSIZE 4096
+#define IMAX_ARGS 258
 
-void run_shell(void)
+void irun_shell(void)
 {
-    char *line = NULL;
-    char **arguments;
-    size_t length = 0;
+    char *linee = NULL;
+    char **args;
+    size_t len = 0;
     ssize_t read;
-
     while (1)
     {
         if (isatty(0))
-        {
-            display_prompt();
-        }
-
-        read = getline(&line, &length, stdin);
+            thom_prompt();
+        read = getline(&linee, &len, stdin);
         if (read == -1)
         {
-            free(line);
+            free(linee);
             exit(0);
         }
-
-        arguments = parse_arguments(line);
-        if (!arguments[0])
+        args = thom_args(linee);
+        if (!args[0])
         {
-            free_arguments(arguments);
+            thomfree_args(args);
             continue;
         }
-
-        if (is_builtin_command(arguments))
+        if (thom_builtin(args))
         {
-            execute_builtin_command(arguments);
+            execute_builtinthom(args);
         }
         else
         {
-            execute_command(arguments);
+            exct_commvnd(args);
         }
-
-        free_arguments(arguments);
+        thomfree_args(args);
     }
-
-    free(line);
+    free(linee);
 }
 
-void free_arguments(char **arguments)
+void thomfree_args(char **args)
 {
     int i;
-    for (i = 0; arguments[i]; i++)
+    for (i = 0; args[i]; i++)
     {
-        free(arguments[i]);
+        free(args[i]);
     }
-    free(arguments);
+    free(args);
 }
 
-void execute_builtin_command(char **arguments)
+void execute_builtinthom(char **args)
 {
-    if (!arguments || !arguments[0])
+    if (!args || !args[0])
     {
         return;
     }
-
-    if (strcmp(arguments[0], "exit") == 0)
+    if (strcmp(args[0], "exit") == 0)
     {
-        exit(0);
+        if (args[1])
+        {
+            int exit_status = atoi(args[1]);
+            exit(exit_status);
+        }
+        else
+        {
+            exit(0);
+        }
     }
-    else if (strcmp(arguments[0], "cd") == 0)
+    else if (strcmp(args[0], "cd") == 0)
     {
-        const char *directory = arguments[1] ? arguments[1] : _get_environment_variable("HOME");
-        if (chdir(directory) != 0)
+        const char *di = args[1] ? args[1] : _getenv("HOME");
+        if (chdir(di) != 0)
         {
             perror("cd");
         }
     }
-    else if (strcmp(arguments[0], "env") == 0)
+    else if (strcmp(args[0], "env") == 0)
     {
-        char **environment_variable;
-        ssize_t length;
-        int stdout_fd = STDOUT_FILENO;
-
-        for (environment_variable = environ; *environment_variable != NULL; environment_variable++)
+        char **env;
+        ssize_t len;
+        int sf = STDOUT_FILENO;
+        for (env = environ; *env != NULL; env++)
         {
-            length = strlen(*environment_variable);
-            if (write(stdout_fd, *environment_variable, length) != length || write(stdout_fd, "\n", 1) != 1)
+            len = strlen(*env);
+            if (write(sf, *env, len) != (ssize_t)len || write(sf, "\n", 1) != (ssize_t)1)
             {
                 perror("write");
                 break;
@@ -155,158 +150,131 @@ void execute_builtin_command(char **arguments)
     }
 }
 
-int is_builtin_command(char **arguments)
+int thom_builtin(char **args)
 {
-    return (strcmp(arguments[0], "exit") == 0 ||
-            strcmp(arguments[0], "cd") == 0 ||
-            strcmp(arguments[0], "env") == 0);
+    return (strcmp(args[0], "exit") == 0 ||
+            strcmp(args[0], "cd") == 0 ||
+            strcmp(args[0], "env") == 0);
 }
 
-char **parse_arguments(char *line)
+char **thom_args(char *linee)
 {
-    char **arguments = malloc(MAX_ARGS * sizeof(char *));
-    char *token;
+    char **args = malloc(IMAX_ARGS * sizeof(char *));
+    char *tkn;
     int i = 0;
-
-    token = strtok(line, " \t\n");
-    while (token != NULL && i < MAX_ARGS)
+    tkn = strtok(linee, " \t\n");
+    while (tkn != NULL && i < IMAX_ARGS)
     {
-        arguments[i++] = strdup(token);
-        token = strtok(NULL, " \t\n");
+        args[i++] = strdup(tkn);
+        tkn = strtok(NULL, " \t\n");
     }
-
-    arguments[i] = NULL;
-    return arguments;
+    args[i] = NULL;
+    return args;
 }
 
-void display_prompt(void)
+void thom_prompt(void)
 {
     write(STDOUT_FILENO, "#taha$ ", 7);
 }
 
-void print_process_id(void)
+void pnt_iid(void)
 {
     char pid_str[100];
-    int pid_length;
-
-    pid_length = sprintf(pid_str, "PID: %d\n", getpid());
-    write(STDOUT_FILENO, pid_str, pid_length);
+    int pid_len;
+    pid_len = sprintf(pid_str, "PID: %d\n", getpid());
+    write(STDOUT_FILENO, pid_str, pid_len);
 }
 
-void print_parent_process_id(void)
+void pnt_iiid(void)
 {
     char ppid_str[100];
-    int ppid_length;
-
-    ppid_length = sprintf(ppid_str, "PPID: %d\n", getppid());
-    write(STDOUT_FILENO, ppid_str, ppid_length);
+    int ppid_len;
+    ppid_len = sprintf(ppid_str, "PPID: %d\n", getppid());
+    write(STDOUT_FILENO, ppid_str, ppid_len);
 }
 
-void execute_command(char **arguments)
+void exct_commvnd(char **args)
 {
-    pid_t pid = fork();
-
-    if (pid == 0)
+    pid_t iid = fork();
+    if (iid == 0)
     {
-        execute_execve(arguments);
+        com_execve(args);
         exit(0);
     }
     else
     {
-        waitpid(pid, NULL, 0);
+        waitpid(iid, NULL, 0);
     }
 }
 
-char *read_line(void)
+char *get_line(void)
 {
-    static int length = 0;
-    static int position = 0;
-    static char buffer[BUFFER_SIZE];
-    char *line;
-    int line_length = 0;
-
-    if (position >= length)
+    static int lenn;
+    static int lenn1;
+    static char buffer[1024];
+    char *liine;
+    int liine_lenn = 0;
+    if (lenn1 >= lenn)
     {
-        length = read(STDIN_FILENO, buffer, BUFFER_SIZE);
-        if (length <= 0)
+        lenn = read(STDIN_FILENO, buffer, 1024);
+        if (lenn <= 0)
         {
             return NULL;
         }
-        position = 0;
+        lenn1 = 0;
     }
-
-    line = malloc(BUFFER_SIZE);
-    if (line == NULL)
+    liine = malloc(1024);
+    while (lenn1 < lenn)
     {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-
-    while (position < length)
-    {
-        if (buffer[position] == '\n')
+        if (buffer[lenn1] == '\n')
         {
-            position++;
+            lenn1++;
             break;
         }
-        line[line_length++] = buffer[position++];
+        liine[liine_lenn++] = buffer[lenn1++];
     }
-    line[line_length] = '\0';
-    return line;
+    liine[liine_lenn] = '\0';
+    return liine;
 }
 
-void execute_execve(char **arguments)
+void com_execve(char **args)
 {
-    char *directory, *command_path, *path, *command;
-    char *error_message;
-    size_t length;
+    char *d, *cmdpvth, *pth, *commvnd;
+    char *error_msg;
+    size_t len;
     int i;
 
-    for (i = 0; arguments[i]; i++)
+    for (i = 0; args[i]; i++)
     {
-        command = arguments[i];
+        commvnd = args[i];
 
-        if (access(command, X_OK) == 0)
+        if (access(commvnd, X_OK) == 0)
         {
-            execve(command, arguments, environ);
+            execve(commvnd, args, environ);
         }
+        pth = _getenv("PATH");
+        d = strtok(pth, ":");
 
-        path = _get_environment_variable("PATH");
-        directory = strtok(path, ":");
-
-        while (directory != NULL)
+        while (d != NULL)
         {
-            command_path = malloc(strlen(directory) + strlen(command) + 2);
-            if (command_path == NULL)
+            cmdpvth = malloc(strlen(d) + strlen(commvnd) + 2);
+            sprintf(cmdpvth, "%s/%s", d, commvnd);
+
+            if (access(cmdpvth, X_OK) == 0)
             {
-                perror("malloc");
-                exit(EXIT_FAILURE);
+                execve(cmdpvth, args, environ);
             }
 
-            strcpy(command_path, directory);
-            strcat(command_path, "/");
-            strcat(command_path, command);
-
-            if (access(command_path, X_OK) == 0)
-            {
-                execve(command_path, arguments, environ);
-            }
-
-            free(command_path);
-            directory = strtok(NULL, ":");
+            free(cmdpvth);
+            d = strtok(NULL, ":");
         }
-
-        error_message = malloc(strlen(command) + 18);
-        if (error_message == NULL)
-        {
-            perror("malloc");
-            exit(EXIT_FAILURE);
-        }
-
-        length = sprintf(error_message, "%s: command not found\n", command);
-        write(STDERR_FILENO, error_message, length);
-        free(error_message);
-        exit(EXIT_FAILURE);
     }
+
+    len = strlen(commvnd) + 22;
+    error_msg = malloc(len);
+    sprintf(error_msg, "not found: %s\n", commvnd);
+    write(STDERR_FILENO, error_msg, len);
+    free(error_msg);
+    exit(127);
 }
 

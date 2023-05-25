@@ -7,97 +7,97 @@
 #include <sys/types.h>
 
 extern char **environ;
-char **yass_zak;
+char **zak;
 
-void ryn_myshell(void);
-void exes_cmd(char **args);
-void exes_myexev(char **args);
-char **fuc_args(char *fucle);
-int fuc_bul(char **args);
-void exe_built(char **args);
-void free_myarg(char **args);
-void print_prompt(void);
-void myp_id(void);
-void print_fuid(void);
-void print_mstat(char *f_name);
-char *_getenv(const char *getname);
-char *get_line(void);
+void run_mycode(void);
+void exes_cmdd(char **args);
+void com_execve(char **args);
+char **pars_args(char *linP);
+int fun_bult(char **args);
+void exec_bultts(char **args);
+void free_argsss(char **args);
+void print_out(void);
+void print_myid(void);
+void print_cid(void);
+void printstt(char *F_name);
+char *_getenv(const char *name);
+char *get_ly(void);
 
 int main(int argc __attribute__((unused)), char **argv)
 {
-    yass_zak = argv;
-    ryn_myshell();
+    zak = argv;
+    run_mycode();
     return 0;
 }
 
-char *_getenv(const char *getname)
+char *_getenv(const char *name)
 {
-    size_t getvlen = strlen(getname);
-    char **vilen;
+    size_t nvmelen = strlen(name);
+    char **var;
 
-    for (vilen = environ; *vilen != NULL; vilen++)
+    for (var = environ; *var != NULL; var++)
     {
-        if (strncmp(getname, *vilen, getvlen) == 0 && (*vilen)[getvlen] == '=')
+        if (strncmp(name, *var, nvmelen) == 0 && (*var)[nvmelen] == '=')
         {
-            return &((*vilen)[getvlen + 1]);
+            return &((*var)[nvmelen + 1]);
         }
     }
     return NULL;
 }
 
-void print_mstat(char *f_name)
+void printstt(char *F_name)
 {
     struct stat file_stat;
     char buffer[1024];
     int len;
-    if (stat(f_name, &file_stat) == -1)
+    if (stat(F_name, &file_stat) == -1)
     {
         perror("stat");
         return;
     }
-    len = sprintf(buffer, "File: %s\n", f_name);
+    len = sprintf(buffer, "File: %s\n", F_name);
     write(STDOUT_FILENO, buffer, len);
 }
 
 #define BUFF_SSIZE 4096
 #define IMAX_ARGS 258
 
-void ryn_myshell(void)
+void run_mycode(void)
 {
-    char *fucle = NULL;
+    char *linP = NULL;
     char **args;
     size_t len = 0;
     ssize_t read;
     while (1)
     {
         if (isatty(0))
-            print_prompt();
-        read = getline(&fucle, &len, stdin);
+            print_out();
+        read = getline(&linP, &len, stdin);
         if (read == -1)
         {
-            free(fucle);
+            free(linP);
             exit(0);
         }
-        args = fuc_args(fucle);
+        args = pars_args(linP);
         if (!args[0])
         {
-            free_myarg(args);
+            free_argsss(args);
             continue;
         }
-        if (fuc_bul(args))
+        if (fun_bult(args))
         {
-            exe_built(args);
+            exec_bultts(args);
         }
         else
         {
-            exes_cmd(args);
+            exes_cmdd(args);
         }
-        free_myarg(args);
+        free_argsss(args);
     }
-    free(fucle);
+    free(linP);
 }
 
-void free_myarg(char **args)
+void free_argsss(char **args)
 {
     int i;
     for (i = 0; args[i]; i++)
@@ -108,7 +108,7 @@ void free_myarg(char **args)
 }
 
 
-void exe_built(char **args)
+void exec_bultts(char **args)
 {
     if (!args || !args[0])
     {
@@ -135,11 +135,11 @@ void exe_built(char **args)
     {
         char **env;
         ssize_t len;
-        int curva = STDOUT_FILENO;
+        int sf = STDOUT_FILENO;
         for (env = environ; *env != NULL; env++)
         {
             len = strlen(*env);
-            if (write(curva, *env, len) != (ssize_t)len || write(curva, "\n", 1) != (ssize_t)1)
+            if (write(sf, *env, len) != (ssize_t)len || write(sf, "\n", 1) != (ssize_t)1)
             {
                 perror("write");
                 break;
@@ -150,36 +150,34 @@ void exe_built(char **args)
 
 
 
-int fuc_bul(char **args)
+int fun_bult(char **args)
 {
     return (strcmp(args[0], "exit") == 0 ||
             strcmp(args[0], "cd") == 0 ||
             strcmp(args[0], "env") == 0);
 }
 
-
-char **fuc_args(char *fucle)
+char **pars_args(char *linP)
 {
     char **args = malloc(IMAX_ARGS * sizeof(char *));
     char *tkn;
     int i = 0;
-    tkn = strtok(fucle, " \t\n;");
+    tkn = strtok(linP, " \t\n");
     while (tkn != NULL && i < IMAX_ARGS)
     {
         args[i++] = strdup(tkn);
-        tkn = strtok(NULL, " \t\n;");
+        tkn = strtok(NULL, " \t\n");
     }
     args[i] = NULL;
     return args;
 }
 
-
-void print_prompt(void)
+void print_out(void)
 {
     write(STDOUT_FILENO, "#yassine$ ", 9);
 }
 
-void myp_id(void)
+void print_myid(void)
 {
     char pid_str[100];
     int pid_len;
@@ -187,7 +185,7 @@ void myp_id(void)
     write(STDOUT_FILENO, pid_str, pid_len);
 }
 
-void print_fuid(void)
+void print_cid(void)
 {
     char ppid_str[100];
     int ppid_len;
@@ -195,72 +193,88 @@ void print_fuid(void)
     write(STDOUT_FILENO, ppid_str, ppid_len);
 }
 
-void exes_cmd(char **args)
+void exes_cmdd(char **args)
 {
-    int i = 0;
-    while (args[i])
+    pid_t iid = fork();
+    if (iid == 0)
     {
-        char *cmd = args[i];
-        if (strcmp(cmd, ";") != 0)
-        {
-            pid_t iid = fork();
-            if (iid == 0)
-            {
-                char **cmd_args = fuc_args(cmd);
-                exes_myexev(cmd_args);
-                free_myarg(cmd_args);
-                exit(0);
-            }
-            else
-            {
-                waitpid(iid, NULL, 0);
-            }
-        }
-        i++;
+        com_execve(args);
+        exit(0);
+    }
+    else
+    {
+        waitpid(iid, NULL, 0);
     }
 }
 
- 
-
-void exes_myexev(char **args)
+char *get_ly(void)
 {
-    char *d, *cmd_ppath, *my_pathy, *commy;
-    char *err_msg;
+    static int lenn;
+    static int lenn1;
+    static char buffer[1024];
+    char *liine;
+    int liine_lenn = 0;
+    if (lenn1 >= lenn)
+    {
+        lenn = read(STDIN_FILENO, buffer, 1024);
+        if (lenn <= 0)
+        {
+            return NULL;
+        }
+        lenn1 = 0;
+    }
+    liine = malloc(1024);
+    while (lenn1 < lenn)
+    {
+        if (buffer[lenn1] == '\n')
+        {
+            lenn1++;
+            break;
+        }
+        liine[liine_lenn++] = buffer[lenn1++];
+    }
+    liine[liine_lenn] = '\0';
+    return liine;
+}
+
+void com_execve(char **args)
+{
+    char *d, *cmdmypath, *pth, *cmdyyd;
+    char *error_msg;
     size_t len;
     int i;
 
     for (i = 0; args[i]; i++)
     {
-        commy = args[i];
+        cmdyyd = args[i];
 
-        if (access(commy, X_OK) == 0)
+        if (access(cmdyyd, X_OK) == 0)
         {
-            execve(commy, args, environ);
+            execve(cmdyyd, args, environ);
         }
-        my_pathy = _getenv("PATH");
-        d = strtok(my_pathy, ":");
+        pth = _getenv("PATH");
+        d = strtok(pth, ":");
 
         while (d != NULL)
         {
-            cmd_ppath = malloc(strlen(d) + strlen(commy) + 2);
-            sprintf(cmd_ppath, "%s/%s", d, commy);
+            cmdmypath = malloc(strlen(d) + strlen(cmdyyd) + 2);
+            sprintf(cmdmypath, "%s/%s", d, cmdyyd);
 
-            if (access(cmd_ppath, X_OK) == 0)
+            if (access(cmdmypath, X_OK) == 0)
             {
-                execve(cmd_ppath, args, environ);
+                execve(cmdmypath, args, environ);
             }
 
-            free(cmd_ppath);
+            free(cmdmypath);
             d = strtok(NULL, ":");
         }
     }
 
-    len = strlen(commy) + 22;
-    err_msg = malloc(len);
-    sprintf(err_msg, "not found: %s\n", commy);
-    write(STDERR_FILENO, err_msg, len);
-    free(err_msg);
+    len = strlen(cmdyyd) + 22;
+    error_msg = malloc(len);
+    sprintf(error_msg, "not found: %s\n", cmdyyd);
+    write(STDERR_FILENO, error_msg, len);
+    free(error_msg);
     exit(127);
 }
-
 

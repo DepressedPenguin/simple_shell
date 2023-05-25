@@ -2,73 +2,115 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
-extern char **environ;
-char **hd;
+#define MAX_COMMAND_LENGTH 1024
+#define MAX_ARGS 100
 
-void runShell();
-void executeCommand(char **args);
-void executeBuiltinCommand(char **args);
-char **tokenizeArgs(char *line);
-int isBuiltinCommand(char **args);
+void tokenizeCommand(char *command, char ***args, int *argCount);
+
 void freeArgs(char **args);
+
+void executeCommand(char **args, const char *executableName, int commandNumber);
+
 void printPrompt();
+
 char *_getenv(const char *name);
+
 char *readLine();
 
-int main(int argc __attribute__((unused)), char **argv)
-{
-    hd = argv;
-    runShell();
-    return 0;
-}
+extern char **environ;
 
-void runShell()
+int main(int argc, char *argv[])
 {
-    char *line = NULL;
-    char **args;
-    size_t len = 0;
-    ssize_t read;
+    char command[MAX_COMMAND_LENGTH];
+    char **args = NULL;
+    int argCount = 0;
+    int commandNumber = 0;
+
+    FILE *inputStream = stdin;
+    int interactiveMode = 1;
+
+    if (argc > 1)
+    {
+        inputStream = fopen(argv[1], "r");
+        interactiveMode = 0;
+        if (inputStream == NULL)
+        {
+            perror("Failed to open the script file");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     while (1)
     {
         if (isatty(0))
+        {
             printPrompt();
-
-        read = getline(&line, &len, stdin);
-
-        if (read == -1)
-        {
-            free(line);
-            exit(0);
         }
 
-        args = tokenizeArgs(line);
-
-        if (!args[0])
+        if (fgets(command, sizeof(command), inputStream) == NULL)
         {
-            freeArgs(args);
-            continue;
+            printf("\n");
+            break;
         }
 
-        if (isBuiltinCommand(args))
+        command[strcspn(command, "\n")] = '\0';
+
+        if (strcmp(command, "exit") == 0)
         {
-            executeBuiltinCommand(args);
-        }
-        else
-        {
-            executeCommand(args);
+            break;
         }
 
+        commandNumber++;
+
+        args = (char **)malloc((MAX_ARGS + 1) * sizeof(char *));
+        if (args == NULL)
+        {
+            perror("Memory allocation failed");
+            exit(EXIT_FAILURE);
+        }
+
+        tokenizeCommand(command, &args, &argCount);
+        executeCommand(args, argv[0], commandNumber);
         freeArgs(args);
     }
 
-    free(line);
+    if (!interactiveMode)
+    {
+        fclose(inputStream);
+    }
+
+    return 0;
 }
 
-void executeCommand(char **args)
+void tokenizeCommand(char *command, char ***args, int *argCount)
+{
+    char *token;
+    int argIndex = 0;
+
+    token = strtok(command, " \t\n");
+    while (token != NULL && argIndex < MAX_ARGS - 1)
+    {
+        (*args)[argIndex] = strdup(token);
+        argIndex++;
+        token = strtok(NULL, " \t\n");
+    }
+    (*args)[argIndex] = NULL;
+    *argCount = argIndex;
+}
+
+void freeArgs(char **args)
+{
+    int i;
+    for (i = 0; args[i] != NULL; i++)
+    {
+        free(args[i]);
+    }
+    free(args);
+}
+
+void executeCommand(char **args, const char *executableName, int commandNumber)
 {
     pid_t pid;
     int status;
@@ -81,9 +123,11 @@ void executeCommand(char **args)
     }
     else if (pid == 0)
     {
-        execvp(args[0], args);
-        fprintf(stderr, "%s: command not found\n", args[0]);
-        exit(EXIT_FAILURE);
+        if (execvp(args[0], args) < 0)
+        {
+            fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, args[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
@@ -99,69 +143,6 @@ void executeCommand(char **args)
     }
 }
 
-void executeBuiltinCommand(char **args)
-{
-    if (!args || !args[0])
-    {
-        return;
-    }
-
-    if (strcmp(args[0], "exit") == 0)
-    {
-        exit(0);
-    }
-    else if (strcmp(args[0], "cd") == 0)
-    {
-        const char *dir = args[1] ? args[1] : _getenv("HOME");
-        if (chdir(dir) != 0)
-        {
-            perror("cd");
-        }
-    }
-    else if (strcmp(args[0], "env") == 0)
-    {
-        char **env;
-        for (env = environ; *env != NULL; env++)
-        {
-            printf("%s\n", *env);
-        }
-    }
-}
-
-int isBuiltinCommand(char **args)
-{
-    return (strcmp(args[0], "exit") == 0 ||
-            strcmp(args[0], "cd") == 0 ||
-            strcmp(args[0], "env") == 0);
-}
-
-char **tokenizeArgs(char *line)
-{
-    char **args = malloc((MAX_ARGS + 1) * sizeof(char *));
-    char *token;
-    int argIndex = 0;
-
-    token = strtok(line, " \t\n");
-    while (token != NULL && argIndex < MAX_ARGS - 1)
-    {
-        args[argIndex++] = strdup(token);
-        token = strtok(NULL, " \t\n");
-    }
-    args[argIndex] = NULL;
-
-    return args;
-}
-
-void freeArgs(char **args)
-{
-    int i;
-    for (i = 0; args[i] != NULL; i++)
-    {
-        free(args[i]);
-    }
-    free(args);
-}
-
 void printPrompt()
 {
     printf("$ ");
@@ -170,24 +151,22 @@ void printPrompt()
 
 char *_getenv(const char *name)
 {
-    size_t namelen = strlen(name);
-    char **var;
-
-    for (var = environ; *var != NULL; var++)
+    int i;
+    size_t len = strlen(name);
+    for (i = 0; environ[i] != NULL; i++)
     {
-        if (strncmp(name, *var, namelen) == 0 && (*var)[namelen] == '=')
+        if (strncmp(name, environ[i], len) == 0 && environ[i][len] == '=')
         {
-            return &((*var)[namelen + 1]);
+            return environ[i] + len + 1;
         }
     }
-
     return NULL;
 }
 
 char *readLine()
 {
     char *line = NULL;
-    ssize_t bufsize = 0;
+    size_t bufsize = 0;
     getline(&line, &bufsize, stdin);
     return line;
 }

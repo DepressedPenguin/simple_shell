@@ -107,6 +107,7 @@ void thomfree_args(char **args)
     free(args);
 }
 
+
 void execute_builtinthom(char **args)
 {
     if (!args || !args[0])
@@ -115,15 +116,12 @@ void execute_builtinthom(char **args)
     }
     if (strcmp(args[0], "exit") == 0)
     {
+        int status = 0;
         if (args[1])
         {
-            int exit_status = atoi(args[1]);
-            exit(exit_status);
+            status = atoi(args[1]);
         }
-        else
-        {
-            exit(0);
-        }
+        exit(status);
     }
     else if (strcmp(args[0], "cd") == 0)
     {
@@ -150,6 +148,8 @@ void execute_builtinthom(char **args)
     }
 }
 
+
+
 int thom_builtin(char **args)
 {
     return (strcmp(args[0], "exit") == 0 ||
@@ -174,7 +174,7 @@ char **thom_args(char *linee)
 
 void thom_prompt(void)
 {
-    write(STDOUT_FILENO, "#taha$ ", 7);
+    write(STDOUT_FILENO, "#yassine$ ", 7);
 }
 
 void pnt_iid(void)

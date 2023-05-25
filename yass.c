@@ -1,35 +1,31 @@
+extern char **environ;
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 #define MAX_COMMAND_LENGTH 1024
-#define MAX_ARGS 100
-
+#define MAX_ARGS 64
 void tokenizeCommand(char *command, char ***args, int *argCount);
-
-void freeArgs(char **args);
-
+void freeArguments(char **args);
 void executeCommand(char **args, const char *executableName, int commandNumber);
-
-void printPrompt();
-
 char *_getenv(const char *name);
-
 char *readLine();
-
-extern char **environ;
 
 int main(int argc, char *argv[])
 {
+    FILE *inputStream = stdin;
+    int interactiveMode = 1;
     char command[MAX_COMMAND_LENGTH];
     char **args = NULL;
     int argCount = 0;
     int commandNumber = 0;
-
-    FILE *inputStream = stdin;
-    int interactiveMode = 1;
+    char *line;
+    pid_t pid;
+    int status;
 
     if (argc > 1)
     {
@@ -44,22 +40,34 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        if (isatty(0))
+        if (isatty(STDIN_FILENO))
         {
-            printPrompt();
+            printf("$ ");
+            fflush(stdout);
         }
 
-        if (fgets(command, sizeof(command), inputStream) == NULL)
+        line = readLine();
+        if (line == NULL)
         {
             printf("\n");
             break;
         }
 
-        command[strcspn(command, "\n")] = '\0';
+        strcpy(command, line);
+        free(line);
 
         if (strcmp(command, "exit") == 0)
         {
             break;
+        }
+        else if (strcmp(command, "env") == 0)
+        {
+            char **env = environ;
+            while (*env)
+            {
+                printf("%s\n", *env++);
+            }
+            continue;
         }
 
         commandNumber++;
@@ -72,8 +80,39 @@ int main(int argc, char *argv[])
         }
 
         tokenizeCommand(command, &args, &argCount);
-        executeCommand(args, argv[0], commandNumber);
-        freeArgs(args);
+
+        pid = fork();
+        if (pid < 0)
+        {
+            perror("Fork failed");
+            exit(EXIT_FAILURE);
+        }
+        else if (pid == 0)
+        {
+            char *executableName = args[0];
+            char *envPath = _getenv("PATH");
+            char *path = strtok(envPath, ":");
+
+            while (path != NULL)
+            {
+                char executablePath[MAX_COMMAND_LENGTH];
+                strcpy(executablePath, path);
+                strcat(executablePath, "/");
+                strcat(executablePath, executableName);
+                execve(executablePath, args, environ);
+                path = strtok(NULL, ":");
+            }
+
+            fprintf(stderr, "%s: %d: %s: not found\n", argv[0], commandNumber, executableName);
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            while (wait(&status) != pid)
+                ;
+        }
+
+        freeArguments(args);
     }
 
     if (!interactiveMode)
@@ -97,10 +136,11 @@ void tokenizeCommand(char *command, char ***args, int *argCount)
         token = strtok(NULL, " \t\n");
     }
     (*args)[argIndex] = NULL;
+
     *argCount = argIndex;
 }
 
-void freeArgs(char **args)
+void freeArguments(char **args)
 {
     int i;
     for (i = 0; args[i] != NULL; i++)
@@ -123,36 +163,23 @@ void executeCommand(char **args, const char *executableName, int commandNumber)
     }
     else if (pid == 0)
     {
-        if (execvp(args[0], args) < 0)
-        {
-            fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, args[0]);
-            exit(EXIT_FAILURE);
-        }
+        execvp(args[0], args);
+
+        fprintf(stderr, "%s: %d: %s: not found\n", executableName, commandNumber, args[0]);
+        exit(EXIT_FAILURE);
     }
     else
     {
-        do
-        {
-            pid_t wpid = waitpid(pid, &status, WUNTRACED);
-            if (wpid == -1)
-            {
-                perror("Waitpid failed");
-                exit(EXIT_FAILURE);
-            }
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+        while (wait(&status) != pid)
+            ;
     }
-}
-
-void printPrompt()
-{
-    printf("$ ");
-    fflush(stdout);
 }
 
 char *_getenv(const char *name)
 {
     int i;
     size_t len = strlen(name);
+
     for (i = 0; environ[i] != NULL; i++)
     {
         if (strncmp(name, environ[i], len) == 0 && environ[i][len] == '=')
@@ -167,7 +194,20 @@ char *readLine()
 {
     char *line = NULL;
     size_t bufsize = 0;
-    getline(&line, &bufsize, stdin);
+    ssize_t bytesRead;
+
+    bytesRead = getline(&line, &bufsize, stdin);
+    if (bytesRead == -1)
+    {
+        free(line);
+        return NULL;
+    }
+
+    if (bytesRead > 0 && line[bytesRead - 1] == '\n')
+    {
+        line[bytesRead - 1] = '\0';
+    }
+
     return line;
 }
 

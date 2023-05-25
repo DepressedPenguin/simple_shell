@@ -157,26 +157,24 @@ int thom_builtin(char **args)
             strcmp(args[0], "env") == 0);
 }
 
-
 char **thom_args(char *linee)
 {
     char **args = malloc(IMAX_ARGS * sizeof(char *));
     char *tkn;
     int i = 0;
-    tkn = strtok(linee, " \t\n;");
+    tkn = strtok(linee, " \t\n");
     while (tkn != NULL && i < IMAX_ARGS)
     {
         args[i++] = strdup(tkn);
-        tkn = strtok(NULL, " \t\n;");
+        tkn = strtok(NULL, " \t\n");
     }
     args[i] = NULL;
     return args;
 }
 
-
 void thom_prompt(void)
 {
-    write(STDOUT_FILENO, "#yassine$ ", 9);
+    write(STDOUT_FILENO, "#yassine$ ", 7);
 }
 
 void pnt_iid(void)
@@ -197,30 +195,47 @@ void pnt_iiid(void)
 
 void exct_commvnd(char **args)
 {
-    int i = 0;
-    while (args[i])
+    pid_t iid = fork();
+    if (iid == 0)
     {
-        char *cmd = args[i];
-        if (strcmp(cmd, ";") != 0)
-        {
-            pid_t iid = fork();
-            if (iid == 0)
-            {
-                char **cmd_args = thom_args(cmd);
-                com_execve(cmd_args);
-                thomfree_args(cmd_args);
-                exit(0);
-            }
-            else
-            {
-                waitpid(iid, NULL, 0);
-            }
-        }
-        i++;
+        com_execve(args);
+        exit(0);
+    }
+    else
+    {
+        waitpid(iid, NULL, 0);
     }
 }
 
- 
+char *get_line(void)
+{
+    static int lenn;
+    static int lenn1;
+    static char buffer[1024];
+    char *liine;
+    int liine_lenn = 0;
+    if (lenn1 >= lenn)
+    {
+        lenn = read(STDIN_FILENO, buffer, 1024);
+        if (lenn <= 0)
+        {
+            return NULL;
+        }
+        lenn1 = 0;
+    }
+    liine = malloc(1024);
+    while (lenn1 < lenn)
+    {
+        if (buffer[lenn1] == '\n')
+        {
+            lenn1++;
+            break;
+        }
+        liine[liine_lenn++] = buffer[lenn1++];
+    }
+    liine[liine_lenn] = '\0';
+    return liine;
+}
 
 void com_execve(char **args)
 {
